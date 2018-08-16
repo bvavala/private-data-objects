@@ -29,8 +29,9 @@ namespace pdo {
         size_t* valueSize
         )
     {
-        ByteArray keyArray(key, key + keySize);
-        printf("Get: '%s'\n", BinaryToHexString(keyArray));
+        Log(PDO_LOG_ERROR,
+            "Get: '%s'",
+            BinaryToHexString(key, keySize).c_str());
     }
 
     int BlockStorePut(
@@ -40,8 +41,9 @@ namespace pdo {
         const size_t valueSize
         )
     {
-        ByteArray keyArray(key, key + keySize);
-        ByteArray valueArray(value, value + valueSize);
-        printf("Put: '%s' : '%s'\n", BinaryToHexString(keyArray), BinaryToHexString(valueArray));
+        Log(PDO_LOG_ERROR,
+            "Put: '%s' -> '%s'",
+            BinaryToHexString(key, keySize).c_str(),
+            BinaryToHexString(value, valueSize).c_str());
     }
 } // namespace pdo
