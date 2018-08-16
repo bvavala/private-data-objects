@@ -129,6 +129,7 @@ class ContractState(object) :
         result['ContractID'] = self.contract_id
         if self.encrypted_state :
             result['EncryptedState'] = self.encrypted_state
+            result['StateHash'] = ContractState.compute_hash(self.encrypted_state, encoding='b64')
 
         return result
 

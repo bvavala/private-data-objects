@@ -13,12 +13,21 @@
  * limitations under the License.
  */
 
-enclave {
-    from "sgx_tstdc.edl" import *;
-    from "sgx_tsgxssl.edl" import *;
-    from "base.edl" import *;
-    from "signup.edl" import *;
-    from "contract.edl" import *;
-    from "block_store.edl" import *;
-};
+#pragma once
 
+namespace pdo {
+
+    int BlockStoreGet(
+        const uint8_t* key,
+        const size_t keySize,
+        uint8_t **value,
+        size_t* valueSize
+        );
+    int BlockStorePut(
+        const uint8_t* key,
+        const size_t keySize,
+        const uint8_t* value,
+        const size_t valueSize
+        );
+
+} // namespace pdo
