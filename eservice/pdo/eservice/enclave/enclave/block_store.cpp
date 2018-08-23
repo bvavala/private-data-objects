@@ -33,7 +33,7 @@ namespace pdo {
         )
     {
         std::string keyStr = BinaryToHexString(key, keySize);
-        Log(PDO_LOG_ERROR,
+        Log(PDO_LOG_DEBUG,
             "Get: '%s'",
             keyStr.c_str());
 
@@ -47,7 +47,7 @@ namespace pdo {
             return 1;
         } else {
             std::string valueStr = map[keyStr];
-            Log(PDO_LOG_ERROR,
+            Log(PDO_LOG_DEBUG,
                 "Found key: '%s' -> '%s'",
                 keyStr.c_str(),
                 valueStr.c_str());
@@ -81,12 +81,12 @@ namespace pdo {
         const size_t valueSize
         )
     {
-        Log(PDO_LOG_ERROR, "PUT %zu bytes key -> %zu bytes value", keySize, valueSize);
+        Log(PDO_LOG_DEBUG, "PUT %zu bytes key -> %zu bytes value", keySize, valueSize);
 
         std::string keyStr = BinaryToHexString(key, keySize);
         std::string valueStr = BinaryToHexString(value, valueSize);
 
-        Log(PDO_LOG_ERROR,
+        Log(PDO_LOG_DEBUG,
             "Put: '%s' -> '%s'",
             keyStr.c_str(),
             valueStr.c_str());
