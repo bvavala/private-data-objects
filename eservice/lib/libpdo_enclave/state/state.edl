@@ -14,12 +14,17 @@
  */
 
 enclave {
-    from "sgx_tstdc.edl" import *;
-    from "sgx_tsgxssl.edl" import *;
-    from "base.edl" import *;
-    from "signup.edl" import *;
-    from "contract.edl" import *;
-    from "block_store.edl" import *;
-    from "state/state.edl" import *;
-};
+    trusted {
+        public void test_biox();
+    };
 
+    untrusted {
+        void test_avalanche_wheretoget(
+            [in, size=block_authentication_id_size] const uint8_t* block_authentication_id,
+            size_t block_authentication_id_size,
+            [out] uint8_t** address);
+        void test_avalanche_wheretoput(
+            size_t block_size,
+            [out] uint8_t** address);       
+    };
+};

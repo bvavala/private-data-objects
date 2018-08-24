@@ -13,13 +13,12 @@
  * limitations under the License.
  */
 
-enclave {
-    from "sgx_tstdc.edl" import *;
-    from "sgx_tsgxssl.edl" import *;
-    from "base.edl" import *;
-    from "signup.edl" import *;
-    from "contract.edl" import *;
-    from "block_store.edl" import *;
-    from "state/state.edl" import *;
-};
+#pragma once
 
+namespace pdo {
+    namespace state {
+        uint8_t* test_avalanche_wheretoget(const uint8_t* block_authentication_id_size,
+                                            size_t block_authentication_id_size);
+        uint8_t* test_avalanche_wheretoput(size_t block_size);
+    } // namespace state
+} // namespace pdo
