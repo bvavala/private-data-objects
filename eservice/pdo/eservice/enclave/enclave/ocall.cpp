@@ -66,16 +66,16 @@ extern "C" {
         size_t* valueSize
         )
     {
-        pdo::BlockStoreGet(key, keySize, value, valueSize);
+        return pdo::BlockStoreGet(key, keySize, value, valueSize);
     } // ocall_BlockStoreGet
 
-    void ocall_BlockStorePut(
+    int ocall_BlockStorePut(
         const uint8_t* key,
         const size_t keySize,
         const uint8_t* value,
         const size_t valueSize
         )
     {
-        pdo::BlockStorePut(key, keySize, value, valueSize);
+        return pdo::BlockStorePut(key, keySize, value, valueSize);
     } // ocall_BlockStorePut
 } // extern "C"

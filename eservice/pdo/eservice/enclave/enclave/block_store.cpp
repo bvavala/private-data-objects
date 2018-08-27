@@ -81,16 +81,28 @@ namespace pdo {
         const size_t valueSize
         )
     {
-        Log(PDO_LOG_DEBUG, "PUT %zu bytes key -> %zu bytes value", keySize, valueSize);
+        int result = 1;
 
-        std::string keyStr = BinaryToHexString(key, keySize);
-        std::string valueStr = BinaryToHexString(value, valueSize);
+        try{
+            Log(PDO_LOG_DEBUG, "PUT %zu bytes key -> %zu bytes value", keySize, valueSize);
 
-        Log(PDO_LOG_DEBUG,
-            "Put: '%s' -> '%s'",
-            keyStr.c_str(),
-            valueStr.c_str());
+            std::string keyStr = BinaryToHexString(key, keySize);
+            std::string valueStr = BinaryToHexString(value, valueSize);
 
-        map[keyStr] = valueStr;
+            Log(PDO_LOG_DEBUG,
+                "Put: '%s' -> '%s'",
+                keyStr.c_str(),
+                valueStr.c_str());
+
+            map[keyStr] = valueStr;
+            return 0;
+
+        }catch(...){
+            Log(PDO_LOG_ERROR,
+                "Error: Failed to store to Block Store");
+        }
+
+        return result;
+
     }
 } // namespace pdo

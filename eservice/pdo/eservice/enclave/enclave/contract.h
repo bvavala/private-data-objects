@@ -58,6 +58,19 @@ namespace pdo
                 Base64EncodedString& outSerializedResponse
                 );
 
+            // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+            pdo_err_t BlockStoreGet(
+                const HexEncodedString& inKey,
+                HexEncodedString& outValue
+                );
+
+            // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+            pdo_err_t BlockStorePut(
+                const HexEncodedString& inKey,
+                const HexEncodedString& inValue
+                );
+
+
         } /* contract */
     }     /* enclave_api */
 }         /* pdo */

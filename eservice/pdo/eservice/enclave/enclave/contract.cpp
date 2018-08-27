@@ -55,11 +55,12 @@ pdo_err_t pdo::enclave_api::contract::VerifySecrets(
         ByteArray contract_key_signature(pdo::enclave_api::base::GetSignatureSize());
 
         // xxxxx call the enclave
-        sgx_enclave_id_t enclaveid = g_Enclave[1].GetEnclaveId();
+        sgx_enclave_id_t enclaveid = g_Enclave[0].GetEnclaveId();
+        Log(PDO_LOG_DEBUG, "Enclave_ID:  %ld ", (long)enclaveid);
 
         pdo_err_t presult = PDO_SUCCESS;
         sgx_status_t sresult =
-            g_Enclave[1].CallSgx(
+            g_Enclave[0].CallSgx(
                 [
                     enclaveid,
                     &presult,
@@ -88,7 +89,7 @@ pdo_err_t pdo::enclave_api::contract::VerifySecrets(
                 }
                 );
         pdo::error::ThrowSgxError(sresult, "SGX enclave call failed (VerifySecrets)");
-        g_Enclave[1].ThrowPDOError(presult);
+        g_Enclave[0].ThrowPDOError(presult);
 
         outEncryptedContractKey = ByteArrayToBase64EncodedString(encrypted_contract_key);
         outContractKeySignature = ByteArrayToBase64EncodedString(contract_key_signature);
@@ -131,11 +132,12 @@ pdo_err_t pdo::enclave_api::contract::HandleContractRequest(
         ByteArray serialized_request = Base64EncodedStringToByteArray(inSerializedRequest);
 
         // xxxxx call the enclave
-        sgx_enclave_id_t enclaveid = g_Enclave[1].GetEnclaveId();
+        sgx_enclave_id_t enclaveid = g_Enclave[0].GetEnclaveId();
+        Log(PDO_LOG_DEBUG, "Enclave_ID:  %ld ", (long)enclaveid);
 
         pdo_err_t presult = PDO_SUCCESS;
         sgx_status_t sresult =
-            g_Enclave[1].CallSgx(
+            g_Enclave[0].CallSgx(
                 [
                     enclaveid,
                     &presult,
@@ -160,7 +162,7 @@ pdo_err_t pdo::enclave_api::contract::HandleContractRequest(
                 }
                 );
         pdo::error::ThrowSgxError(sresult, "SGX enclave call failed (InitializeContract)");
-        g_Enclave[1].ThrowPDOError(presult);
+        g_Enclave[0].ThrowPDOError(presult);
 
         outSerializedResponseSize = response_size;
 
@@ -200,11 +202,12 @@ pdo_err_t pdo::enclave_api::contract::GetSerializedResponse(
         ByteArray sealed_enclave_data = Base64EncodedStringToByteArray(inSealedEnclaveData);
 
         // xxxxx call the enclave
-        sgx_enclave_id_t enclaveid = g_Enclave[1].GetEnclaveId();
+        sgx_enclave_id_t enclaveid = g_Enclave[0].GetEnclaveId();
+        Log(PDO_LOG_DEBUG, "Enclave_ID:  %ld ", (long)enclaveid);
 
         pdo_err_t presult = PDO_SUCCESS;
         sgx_status_t sresult =
-            g_Enclave[1].CallSgx(
+            g_Enclave[0].CallSgx(
                 [
                     enclaveid,
                     &presult,
@@ -224,9 +227,99 @@ pdo_err_t pdo::enclave_api::contract::GetSerializedResponse(
                 }
                 );
         pdo::error::ThrowSgxError(sresult, "SGX enclave call failed (GetSerializedResponse)");
-        g_Enclave[1].ThrowPDOError(presult);
+        g_Enclave[0].ThrowPDOError(presult);
 
         outSerializedResponse = ByteArrayToBase64EncodedString(serialized_response);
+    }
+    catch (pdo::error::Error& e)
+    {
+        pdo::enclave_api::base::SetLastError(e.what());
+        result = e.error_code();
+    }
+    catch (std::exception& e)
+    {
+        pdo::enclave_api::base::SetLastError(e.what());
+        result = PDO_ERR_UNKNOWN;
+    }
+    catch (...)
+    {
+        pdo::enclave_api::base::SetLastError("Unexpected exception");
+        result = PDO_ERR_UNKNOWN;
+    }
+
+    return result;
+}
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+pdo_err_t pdo::enclave_api::contract::BlockStoreGet(
+    const HexEncodedString& inKey,
+    HexEncodedString& outValue
+    )
+{
+    pdo_err_t result = PDO_SUCCESS;
+
+    try
+    {
+
+        ByteArray key = HexEncodedStringToByteArray(inKey);
+
+        /* Untrusted! Need to copy and validate ourselves! */
+        uint8_t *u_state;
+        size_t u_state_size;
+
+
+        // Fetch the state from the untrusted block storage
+        int result = ocall_BlockStoreGet(key.data(), key.size(),
+                            &u_state, &u_state_size);
+        // TODO: Check SGX Status
+        // TODO: Check return code from ocall
+
+        ByteArray value_buffer(u_state, u_state + u_state_size);
+
+        pdo::error::ThrowIf<pdo::error::ValueError>(
+           result != 0, "Unable to get from Block Store");
+
+        outValue = ByteArrayToHexEncodedString(value_buffer);
+    }
+    catch (pdo::error::Error& e)
+    {
+        pdo::enclave_api::base::SetLastError(e.what());
+        result = e.error_code();
+    }
+    catch (std::exception& e)
+    {
+        pdo::enclave_api::base::SetLastError(e.what());
+        result = PDO_ERR_UNKNOWN;
+    }
+    catch (...)
+    {
+        pdo::enclave_api::base::SetLastError("Unexpected exception");
+        result = PDO_ERR_UNKNOWN;
+    }
+
+    return result;
+}
+
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+pdo_err_t pdo::enclave_api::contract::BlockStorePut(
+    const HexEncodedString& inKey,
+    const HexEncodedString& inValue
+    )
+{
+    pdo_err_t result = PDO_SUCCESS;
+
+    try
+    {
+
+        ByteArray key = HexEncodedStringToByteArray(inKey);
+        ByteArray value = HexEncodedStringToByteArray(inValue);
+
+        int result = ocall_BlockStorePut(key.data(), key.size(),
+                            value.data(), value.size());
+
+        pdo::error::ThrowIf<pdo::error::ValueError>(
+           result != 0, "Unable to put into the Block Store");
     }
     catch (pdo::error::Error& e)
     {

@@ -29,3 +29,13 @@ std::string contract_handle_contract_request(
     const std::string& encryptedSessionKey,
     const std::string& serializedRequest
     );
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+std::map<std::string, std::string> block_store_get(
+    const std::string& key);
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+void block_store_put(
+    const std::string& key,
+    const std::string& value
+    );

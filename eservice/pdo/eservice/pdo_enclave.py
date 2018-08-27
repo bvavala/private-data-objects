@@ -194,6 +194,17 @@ def get_enclave_basename():
 
 # -----------------------------------------------------------------
 # -----------------------------------------------------------------
+def block_store_get(key): return enclave.block_store_get(key)
+
+
+# -----------------------------------------------------------------
+# -----------------------------------------------------------------
+def block_store_put(key, value): return enclave.block_store_put(key, value)
+
+
+
+# -----------------------------------------------------------------
+# -----------------------------------------------------------------
 def create_signup_info(originator_public_key_hash, nonce):
     # Part of what is returned with the signup data is an enclave quote, we
     # want to update the revocation list first.

@@ -26,6 +26,7 @@
 
 #include "enclave/base.h"
 #include "enclave/contract.h"
+#include "enclave/block_store.h"
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 std::map<std::string, std::string> contract_verify_secrets(
@@ -83,4 +84,35 @@ std::string contract_handle_contract_request(
     ThrowPDOError(presult);
 
     return response;
+}
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+std::map<std::string, std::string> block_store_get(
+    const std::string& key
+    )
+{
+    HexEncodedString block_store_value_buffer;
+
+    pdo_err_t presult = pdo::enclave_api::contract::BlockStoreGet(
+        key,
+        block_store_value_buffer);
+    ThrowPDOError(presult);
+
+    std::map<std::string, std::string> result;
+    result["value"] = block_store_value_buffer;
+
+    return result;
+}
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+void block_store_put(
+    const std::string& key,
+    const std::string& value
+    )
+{
+
+    pdo_err_t presult = pdo::enclave_api::contract::BlockStorePut(
+        key,
+        value);
+    ThrowPDOError(presult);
 }
