@@ -1,33 +1,10 @@
 #include "state_status.h"
-//#include <string.h>
-
-//#include <sgx_trts.h>
-//#include <sgx_tseal.h>
-//#include <sgx_utils.h>
-//#include "c11_support.h"
 #include "enclave_t.h"
-#include "types.h"
-#include "enclave_utils.h"
 #include <string>
 #include <vector>
-
-#include "sgx_tcrypto.h"
-#include "sgx_utils.h"
-
-#include "error.h"
-#include "pdo_error.h"
-
 #include "crypto.h"
-#include "jsonvalue.h"
-#include "packages/base64/base64.h"
-#include "parson.h"
-#include "types.h"
 #include "zero.h"
 
-#include "hex_string.h"
-
-#include "contract_secrets.h"
-#include "enclave_utils.h"
 /*
 BIOX is the Block I/O interface
 
@@ -65,5 +42,6 @@ int biox_out(uint8_t* uas_destination,
 }
 
 void biox_sync() {
+    test_avalanche_sync();
 }
 

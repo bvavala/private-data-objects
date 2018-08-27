@@ -24,14 +24,6 @@ void __init() {
     memset(avalanche_cache, '\0', sizeof(avalanche_cache));
 }
 
-//HexEncodedString __get_printable_hex_string(uint8_t* buffer, size_t buffer_size) {
-//    ByteArray baBuffer;
-//    baBuffer.assign(
-//        (char*)buffer,
-//        (char*)buffer + buffer_size);
-//    return ByteArrayToHexEncodedString(baBuffer);
-//}
-
 //########################################################
 //########################################################
 //########################################################
@@ -57,18 +49,17 @@ void test_avalanche_wheretoget(
             block_at = (void*)avalanche_cache[i].block;
             
             //string block_key_hex = pdo::BinaryToHexString(avalanche_cache[i].block, avalanche_cache[i].block_size);
-            pdo::Log(PDO_LOG_INFO, "Avalanche_Get: %s", pdo::BinaryToHexString(avalanche_cache[i].block, avalanche_cache[i].block_size).c_str());
+            pdo::Log(PDO_LOG_INFO, "Avalanche_Get: %s\n", pdo::BinaryToHexString(avalanche_cache[i].block, avalanche_cache[i].block_size).c_str());
 
             break;
         }
     }
 
-    //if not found, try opening the respective file, cache it
+    //TODO: if not found, try opening the respective file, cache it
     
     //return cached block address
     *address = (uint8_t*)block_at;
 }
-
 
 void test_avalanche_wheretoput(size_t block_size, uint8_t** address) {
     if(!filled_spots)
@@ -94,7 +85,7 @@ void test_avalanche_wheretoput(size_t block_size, uint8_t** address) {
     avalanche_cache[i].unavailable = 1;
     filled_spots ++;
 
-    pdo::Log(PDO_LOG_INFO, "Avalanche_Put: %d bytes", block_size);
+    pdo::Log(PDO_LOG_INFO, "Avalanche_Put: %d bytes allocated at %x\n", block_size, avalanche_cache[i].block);
 
     //return address to block
     *address = (uint8_t*)avalanche_cache[i].block;
@@ -113,12 +104,12 @@ void test_avalanche_sync() {
             avalanche_cache[i].key = block_hash.data();
             avalanche_cache[i].key_size = block_hash.size();
             
-            pdo::Log(PDO_LOG_INFO, "Avalanche_sync: %s", ByteArrayToHexEncodedString(block_hash).c_str());
+            pdo::Log(PDO_LOG_INFO, "Avalanche_sync: %s\n", ByteArrayToHexEncodedString(block_hash).c_str());
         }
     }
-    //write all cached blocks on disk
+    //TODO: write all cached blocks on disk
         //write 4 byte size first
         //then write block
-}
+} // test_avalanche_sync
 
-}
+} // extern "C"

@@ -26,5 +26,6 @@ enclave {
         void test_avalanche_wheretoput(
             size_t block_size,
             [out] uint8_t** address);       
+        void test_avalanche_sync();
     };
 };
