@@ -112,8 +112,12 @@ pdo_err_t pdo::enclave_api::enclave_data::CreateEnclaveData(
 
         ByteArray sealed_enclave_data_buffer(CalculateSealedEnclaveDataSize());
 
-        // get the enclave id for passing into the ecall
-        sgx_enclave_id_t enclaveid = g_Enclave[0].GetEnclaveId();
+
+        int i = 1;
+        /// get the enclave id for passing into the ecall
+        sgx_enclave_id_t enclaveid = g_Enclave[i].GetEnclaveId();
+        Log(PDO_LOG_DEBUG, "CreateEnclaveData - [%u]Enclave_ID:  %ld ", i, (long)enclaveid);
+
 
         // We need target info in order to create signup data report
         sgx_target_info_t target_info = { 0 };
@@ -205,38 +209,39 @@ pdo_err_t pdo::enclave_api::enclave_data::UnsealEnclaveData(
         ByteArray sealed_enclave_data = Base64EncodedStringToByteArray(inSealedEnclaveData);
         outPublicEnclaveData.resize(CalculatePublicEnclaveDataSize());
 
-        for (pdo::enclave_api::Enclave& enc : g_Enclave) {
-            // xxxxx call the enclave
-            sgx_enclave_id_t enclaveid = enc.GetEnclaveId();
+        int i = 2;
+        /// get the enclave id for passing into the ecall
+        sgx_enclave_id_t enclaveid = g_Enclave[i].GetEnclaveId();
+        Log(PDO_LOG_DEBUG, "UnsealEnclaveData - [%u]Enclave_ID:  %ld ", i, (long)enclaveid);
 
-            // Call down into the enclave to unseal the signup data
-            size_t computed_public_enclave_data_size;
+        // Call down into the enclave to unseal the signup data
+        size_t computed_public_enclave_data_size;
 
-            pdo_err_t presult = PDO_SUCCESS;
-            sgx_status_t sresult = enc.CallSgx(
-                [ enclaveid,
-                  &presult,
-                  sealed_enclave_data,
-                  &outPublicEnclaveData,
-                  &computed_public_enclave_data_size ] ()
-                {
-                    sgx_status_t sresult =
-                    ecall_UnsealEnclaveData(
-                        enclaveid,
-                        &presult,
-                        sealed_enclave_data.data(),
-                        sealed_enclave_data.size(),
-                        outPublicEnclaveData.data(),
-                        outPublicEnclaveData.size(),
-                        &computed_public_enclave_data_size);
-                    return pdo::error::ConvertErrorStatus(sresult, presult);
-                });
+        pdo_err_t presult = PDO_SUCCESS;
+        sgx_status_t sresult = g_Enclave[i].CallSgx(
+            [ enclaveid,
+              &presult,
+              sealed_enclave_data,
+              &outPublicEnclaveData,
+              &computed_public_enclave_data_size ] ()
+            {
+                sgx_status_t sresult =
+                ecall_UnsealEnclaveData(
+                    enclaveid,
+                    &presult,
+                    sealed_enclave_data.data(),
+                    sealed_enclave_data.size(),
+                    outPublicEnclaveData.data(),
+                    outPublicEnclaveData.size(),
+                    &computed_public_enclave_data_size);
+                return pdo::error::ConvertErrorStatus(sresult, presult);
+            });
 
-            pdo::error::ThrowSgxError(sresult, "SGX enclave call failed (ecall_UnsealSignupData)");
-            enc.ThrowPDOError(presult);
+        pdo::error::ThrowSgxError(sresult, "SGX enclave call failed (ecall_UnsealSignupData)");
+        g_Enclave[i].ThrowPDOError(presult);
 
-            outPublicEnclaveData.resize(computed_public_enclave_data_size);
-        }
+        outPublicEnclaveData.resize(computed_public_enclave_data_size);
+
     } catch (pdo::error::Error& e) {
         pdo::enclave_api::base::SetLastError(e.what());
         result = e.error_code();

@@ -193,6 +193,29 @@ pdo_err_t pdo::enclave_api::base::GetEnclaveCharacteristics(
             enclaveBasename.name,
             sizeof(enclaveBasename.name));
 
+        for (pdo::enclave_api::Enclave& enc : g_Enclave) {
+
+            sgx_enclave_id_t enclaveid = enc.GetEnclaveId();
+            Log(PDO_LOG_DEBUG, "Enclave_ID:  %ld ", (long)enclaveid);
+
+            enc.GetEnclaveCharacteristics(
+                &enclaveMeasurement,
+                &enclaveBasename);
+
+            HexEncodedString logMrEnclave = pdo::BinaryToHexString(
+                enclaveMeasurement.m,
+                sizeof(enclaveMeasurement.m));
+
+            HexEncodedString logEnclaveBasename = pdo::BinaryToHexString(
+                enclaveBasename.name,
+                sizeof(enclaveBasename.name));
+
+            Log(PDO_LOG_DEBUG, "[%u]enclaveMeasurement:  %s ", enc, logMrEnclave.c_str());
+            Log(PDO_LOG_DEBUG, "[%u]enclaveBasename:  %s ", enc, logEnclaveBasename.c_str());
+        }
+
+
+
     } catch (pdo::error::Error& e) {
         pdo::enclave_api::base::SetLastError(e.what());
         ret = e.error_code();
