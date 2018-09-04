@@ -99,3 +99,20 @@ class EnclaveServiceClient(GenericServiceClient) :
         except :
             logger.exception('get_enclave_info')
             return None
+
+    # -----------------------------------------------------------------
+    def block_store_get(self, state_hash) :
+        request = { 'operation' : 'BlockStoreGetRequest' }
+        request['key'] = state_hash
+
+        try :
+            response = self._postmsg(request)
+            return response['result']
+
+        except MessageException as me :
+            logger.warn('unable to contact enclave service (block_store_get); %s', me)
+            return None
+
+        except :
+            logger.exception('block_store_get')
+            return None

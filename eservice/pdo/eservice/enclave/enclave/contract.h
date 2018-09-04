@@ -58,16 +58,17 @@ namespace pdo
                 Base64EncodedString& outSerializedResponse
                 );
 
+            //TODO: Refactor!
             // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
             pdo_err_t BlockStoreGet(
-                const HexEncodedString& inKey,
-                HexEncodedString& outValue
+                const ByteArray& inKey,
+                ByteArray& outValue
                 );
 
             // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
             pdo_err_t BlockStorePut(
-                const HexEncodedString& inKey,
-                const HexEncodedString& inValue
+                const ByteArray& inKey,
+                const ByteArray& inValue
                 );
 
 

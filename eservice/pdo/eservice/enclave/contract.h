@@ -21,7 +21,8 @@ std::map<std::string, std::string> contract_verify_secrets(
     const std::string& sealedSignupData, /* base64 encoded string */
     const std::string& contractId,
     const std::string& contractCreatorId, /* contract creators verifying key */
-    const std::string& serializedSecretList); /* json */
+    const std::string& serializedSecretList /* json */
+    );
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 std::string contract_handle_contract_request(
@@ -30,9 +31,11 @@ std::string contract_handle_contract_request(
     const std::string& serializedRequest
     );
 
+//TODO: Refactor!
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-std::map<std::string, std::string> block_store_get(
-    const std::string& key);
+std::string block_store_get(
+    const std::string& key
+    );
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 void block_store_put(

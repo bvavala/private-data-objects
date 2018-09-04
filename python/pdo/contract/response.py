@@ -104,7 +104,7 @@ class ContractResponse(object) :
 
         if self.status and self.state_changed :
             self.signature = response['Signature']
-            self.encrypted_state = response['State']
+            self.state_hash = response['StateHash']
 
             # we have another mismatch between the field names in the enclave
             # and the field names expected in the transaction; this needs to
@@ -121,7 +121,7 @@ class ContractResponse(object) :
             self.creator_id = request.creator_id
             self.code_hash = request.contract_code.compute_hash()
             self.message_hash = request.message.compute_hash()
-            self.new_state_hash = ContractState.compute_hash(self.encrypted_state)
+            self.new_state_hash = crypto.base64_to_byte_array(self.state_hash)
             self.originator_keys = request.originator_keys
             self.enclave_service = request.enclave_service
 
@@ -131,6 +131,10 @@ class ContractResponse(object) :
 
             if not self.__verify_enclave_signature(request.enclave_keys) :
                 raise Exception('failed to verify enclave signature')
+
+            logger.debug('enclave_service: %s, %s', self.enclave_service, self.enclave_service.__dict__)
+            self.encrypted_state = self.enclave_service.block_store_get(self.state_hash)
+            logger.warn('Got encrypted state: %s', self.encrypted_state)
 
     # -------------------------------------------------------
     def __verify_enclave_signature(self, enclave_keys) :

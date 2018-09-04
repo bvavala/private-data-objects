@@ -191,6 +191,13 @@ class Enclave(object) :
         """
         return pdo_enclave.get_enclave_public_info(self.sealed_data)
 
+    # -----------------------------------------------------------------
+    def block_store_get(self, state_hash_b64) :
+        """
+        request the state corresponding to the specified state_hash
+        """
+        return pdo_enclave.block_store_get(state_hash_b64)
+
     # -------------------------------------------------------
     def save_to_file(self, basename, data_dir = "./data") :
         enclave_info = dict()

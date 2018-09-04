@@ -84,14 +84,14 @@ namespace pdo {
         int result = 1;
 
         try{
-            Log(PDO_LOG_DEBUG, "PUT %zu bytes key -> %zu bytes value", keySize, valueSize);
-
             std::string keyStr = BinaryToHexString(key, keySize);
             std::string valueStr = BinaryToHexString(value, valueSize);
 
             Log(PDO_LOG_DEBUG,
-                "Put: '%s' -> '%s'",
+                "Put: %zu bytes '%s' -> %zu bytes '%s'",
+                keySize,
                 keyStr.c_str(),
+                valueSize,
                 valueStr.c_str());
 
             map[keyStr] = valueStr;

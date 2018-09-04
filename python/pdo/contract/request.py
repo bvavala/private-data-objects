@@ -100,8 +100,8 @@ class ContractRequest(object) :
             logger.debug("parsed response: %s", response_parsed)
 
             contract_response = ContractResponse(self, response_parsed)
-        except :
-            logger.exception('contract response is invalid')
+        except Exception as e:
+            logger.exception('contract response is invalid: ' + str(e))
             raise
 
         return contract_response

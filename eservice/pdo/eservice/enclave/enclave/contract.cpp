@@ -261,34 +261,31 @@ pdo_err_t pdo::enclave_api::contract::GetSerializedResponse(
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 pdo_err_t pdo::enclave_api::contract::BlockStoreGet(
-    const HexEncodedString& inKey,
-    HexEncodedString& outValue
+    const ByteArray& inKey,
+    ByteArray& outValue
     )
 {
     pdo_err_t result = PDO_SUCCESS;
 
     try
     {
-
-        ByteArray key = HexEncodedStringToByteArray(inKey);
-
         /* Untrusted! Need to copy and validate ourselves! */
         uint8_t *u_state;
         size_t u_state_size;
 
-
         // Fetch the state from the untrusted block storage
-        int result = ocall_BlockStoreGet(key.data(), key.size(),
+        int result = ocall_BlockStoreGet(inKey.data(), inKey.size(),
                             &u_state, &u_state_size);
         // TODO: Check SGX Status
         // TODO: Check return code from ocall
+        // TODO: Check the hash matches the expected result
 
-        ByteArray value_buffer(u_state, u_state + u_state_size);
+        // Copy the buffer back to the caller's ByteArray
+        outValue.resize(u_state_size);
+        outValue.assign(u_state, u_state + u_state_size);
 
         pdo::error::ThrowIf<pdo::error::ValueError>(
            result != 0, "Unable to get from Block Store");
-
-        outValue = ByteArrayToHexEncodedString(value_buffer);
     }
     catch (pdo::error::Error& e)
     {
@@ -312,20 +309,16 @@ pdo_err_t pdo::enclave_api::contract::BlockStoreGet(
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 pdo_err_t pdo::enclave_api::contract::BlockStorePut(
-    const HexEncodedString& inKey,
-    const HexEncodedString& inValue
+    const ByteArray& inKey,
+    const ByteArray& inValue
     )
 {
     pdo_err_t result = PDO_SUCCESS;
 
     try
     {
-
-        ByteArray key = HexEncodedStringToByteArray(inKey);
-        ByteArray value = HexEncodedStringToByteArray(inValue);
-
-        int result = ocall_BlockStorePut(key.data(), key.size(),
-                            value.data(), value.size());
+        int result = ocall_BlockStorePut(inKey.data(), inKey.size(),
+                            inValue.data(), inValue.size());
 
         pdo::error::ThrowIf<pdo::error::ValueError>(
            result != 0, "Unable to put into the Block Store");

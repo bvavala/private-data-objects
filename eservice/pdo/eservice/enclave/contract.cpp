@@ -21,6 +21,7 @@
 #include "pdo_error.h"
 #include "swig_utils.h"
 #include "types.h"
+#include "packages/base64/base64.h"
 
 #include "contract.h"
 
@@ -87,21 +88,18 @@ std::string contract_handle_contract_request(
 }
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-std::map<std::string, std::string> block_store_get(
+std::string block_store_get(
     const std::string& key
     )
 {
-    HexEncodedString block_store_value_buffer;
+    ByteArray raw_key = base64_decode(key);
+    ByteArray raw_value;
 
-    pdo_err_t presult = pdo::enclave_api::contract::BlockStoreGet(
-        key,
-        block_store_value_buffer);
+    pdo_err_t presult = pdo::enclave_api::contract::BlockStoreGet(raw_key, raw_value);
     ThrowPDOError(presult);
 
     std::map<std::string, std::string> result;
-    result["value"] = block_store_value_buffer;
-
-    return result;
+    return base64_encode(raw_value);
 }
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -110,9 +108,9 @@ void block_store_put(
     const std::string& value
     )
 {
+    ByteArray raw_key = base64_decode(key);
+    ByteArray raw_value = base64_decode(value);
 
-    pdo_err_t presult = pdo::enclave_api::contract::BlockStorePut(
-        key,
-        value);
+    pdo_err_t presult = pdo::enclave_api::contract::BlockStorePut(raw_key, raw_value);
     ThrowPDOError(presult);
 }

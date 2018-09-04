@@ -36,6 +36,8 @@ __all__ = [
     'get_enclave_public_info',
     'get_enclave_measurement',
     'get_enclave_basename',
+    'block_store_get',
+    'block_store_put',
     'verify_secrets',
     'send_to_contract',
     'shutdown'

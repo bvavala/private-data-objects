@@ -58,7 +58,8 @@ class ContractEnclaveServer(resource.Resource):
         self.RequestMap = {
             'UpdateContractRequest' : self._HandleUpdateContractRequest,
             'EnclaveDataRequest' : self._HandleEnclaveDataRequest,
-            'VerifySecretRequest' : self._HandleVerifySecretRequest
+            'VerifySecretRequest' : self._HandleVerifySecretRequest,
+            'BlockStoreGetRequest' : self._HandleBlockStoreGetRequest,
         }
 
     ## -----------------------------------------------------------------
@@ -222,6 +223,28 @@ class ContractEnclaveServer(resource.Resource):
         response['encryption_key'] = self.EncryptionKey
         response['enclave_id'] = self.EnclaveID
         return response
+
+    ## -----------------------------------------------------------------
+    def _HandleBlockStoreGetRequest(self, minfo) :
+        # {
+        #     "key" : <>,
+        # }
+
+        try :
+            key = minfo['key']
+
+        except KeyError as ke :
+            logger.error('missing field in request: %s', ke)
+            raise Error(http.BAD_REQUEST, 'missing field {0}'.format(ke))
+
+        try :
+            response = self.Enclave.block_store_get(key)
+
+            return {'result' : response}
+
+        except :
+            logger.exception('HandleBlockStoreGetRequest')
+            raise Error(http.BAD_REQUEST, "HandleBlockStoreGetRequest")
 
 # -----------------------------------------------------------------
 # sealed_data is base64 encoded string
