@@ -113,6 +113,9 @@ class Contract(object) :
     def set_state(self, state) :
         self.contract_state.encrypted_state = state
 
+    def set_state_root(self, state_root) :
+        self.contract_state.state_root = state_root
+
     # -------------------------------------------------------
     def create_initialize_request(self, request_originator_keys, enclave_service) :
         """create a request to initialize the state of the contract

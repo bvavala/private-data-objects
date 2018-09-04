@@ -59,6 +59,7 @@ class ContractRequest(object) :
         result['EncryptedStateEncryptionKey'] = self.encrypted_state_encryption_key
 
         result['ContractState'] = self.contract_state.serialize()
+        result['StateRoot'] = self.contract_state.state_root
         result['ContractCode'] = self.contract_code.serialize()
         result['ContractMessage'] = self.message.serialize()
 

@@ -24,6 +24,7 @@
 #include "crypto.h"
 #include "jsonvalue.h"
 #include "parson.h"
+#include "packages/base64/base64.h"
 
 #include "contract_request.h"
 #include "contract_response.h"
@@ -123,6 +124,14 @@ ContractRequest::ContractRequest(
     contract_code_.Unpack(ovalue);
 
     // contract state
+    pvalue = json_object_dotget_string(request_object, "StateRoot");
+    pdo::error::ThrowIf<pdo::error::ValueError>(
+        !pvalue, "invalid request; failed to retrieve StateRoot");
+    if(pvalue[0] != '\0') {
+        ByteArray decoded_state_root = base64_decode(pvalue);
+        contract_state_.SetStateRoot(decoded_state_root);
+    }
+
     ovalue = json_object_dotget_object(request_object, "ContractState");
     pdo::error::ThrowIf<pdo::error::ValueError>(
         !ovalue, "invalid request; failed to retrieve ContractState");

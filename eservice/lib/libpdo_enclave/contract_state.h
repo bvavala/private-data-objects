@@ -40,6 +40,7 @@ public:
     ByteArray encrypted_state_ = {};
     ByteArray decrypted_state_ = {};
     ByteArray state_hash_ = {};
+    ByteArray stateRoot_ = {};
 
     ContractState(void){};
 
@@ -52,4 +53,6 @@ public:
         const JSON_Object* object,
         const ByteArray& id_hash,
         const ByteArray& code_hash);
+
+    void SetStateRoot(ByteArray& stateRoot);
 };

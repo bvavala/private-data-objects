@@ -122,6 +122,7 @@ class ContractState(object) :
     def __init__(self, contract_id, encrypted_state = '') :
         self.contract_id = contract_id
         self.encrypted_state = encrypted_state
+        self.state_root = ""
 
     # --------------------------------------------------
     def serialize(self) :

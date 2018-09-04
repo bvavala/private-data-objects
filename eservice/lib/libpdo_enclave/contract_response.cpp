@@ -25,6 +25,7 @@
 #include "packages/base64/base64.h"
 #include "parson.h"
 #include "types.h"
+#include "state.h"
 
 #include "enclave_utils.h"
 
@@ -180,12 +181,27 @@ ByteArray ContractResponse::SerializeAndEncrypt(
 
         ocall_BlockStorePut(&ret, &contract_state_.state_hash_[0], contract_state_.state_hash_.size(),
                             &contract_state_.encrypted_state_[0], contract_state_.encrypted_state_.size());
+        ByteArray mainStateBlockId, mainStateBlock;
+        pdo::state::StateNode mainStateNode(mainStateBlockId, mainStateBlock);
+        ByteArray intrinsicStateId = contract_state_.state_hash_;
+        mainStateNode.AppendChild(intrinsicStateId);
+        //maybe add other children
+        mainStateNode.BlockifyChildren();
+        mainStateNode.ReIdentify();
+        mainStateBlockId = mainStateNode.GetBlockId();
+        mainStateBlock =  mainStateNode.GetBlock();
+        ocall_BlockStorePut(&ret, &mainStateBlockId[0], mainStateBlockId.size(),
+                            &mainStateBlock[0], mainStateBlock.size());
+        Base64EncodedString encoded_state_root = base64_encode(mainStateBlockId);
 
         // TODO - Update this to just send back the hash once the client can handle it
         Base64EncodedString encoded_state = base64_encode(contract_state_.encrypted_state_);
         jret = json_object_dotset_string(contract_response_object, "State", encoded_state.c_str());
         pdo::error::ThrowIf<pdo::error::RuntimeError>(
             jret != JSONSuccess, "failed to serialize the state");
+        jret = json_object_dotset_string(contract_response_object, "StateRoot", encoded_state_root.c_str());
+        pdo::error::ThrowIf<pdo::error::RuntimeError>(
+            jret != JSONSuccess, "failed to serialize the state root");
 
         // --------------- dependencies ---------------
         jret = json_object_set_value(contract_response_object, "Dependencies", json_value_init_array());

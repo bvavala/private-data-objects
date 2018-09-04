@@ -26,7 +26,7 @@ SOURCE_GROUP("Source" FILES ${PROJECT_HEADERS} ${PROJECT_SOURCES} ${PROJECT_EDL}
 SET (LIBPDO_ENCLAVE_EDL ${PROJECT_EDL} PARENT_SCOPE)
 SET (LIBPDO_ENCLAVE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR} PARENT_SCOPE)
 
-INCLUDE_DIRECTORIES(/opt/intel/sgxssl/include ${PDO_TOP_DIR}/common ${PDO_TOP_DIR}/common/crypto ${PDO_TOP_DIR}/common/packages/parson)
+INCLUDE_DIRECTORIES(/opt/intel/sgxssl/include ${PDO_TOP_DIR}/common ${PDO_TOP_DIR}/common/crypto ${PDO_TOP_DIR}/common/packages/parson ${PDO_TOP_DIR}/common/state)
 INCLUDE_DIRECTORIES(${PDO_TOP_DIR}/common/interpreter)
 
 # If are compiling for Linux, then we have special linking for the trusted

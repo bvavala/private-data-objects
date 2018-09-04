@@ -20,6 +20,7 @@
 #include "error.h"
 #include "pdo_error.h"
 
+#include "state.h"
 #include "crypto.h"
 #include "hex_string.h"
 #include "jsonvalue.h"
@@ -103,38 +104,58 @@ ByteArray ContractState::ComputeHash(void) const
 }
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+void ContractState::SetStateRoot(ByteArray& stateRoot)
+{
+    stateRoot_ = stateRoot;
+}
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 void ContractState::Unpack(const ByteArray& state_encryption_key_,
     const JSON_Object* object,
     const ByteArray& id_hash,
     const ByteArray& code_hash)
 {
     const char* pvalue;
+    int ret;
+
+    if(stateRoot_.size() == 0) {
+        return;
+    }
 
     try
     {
+        /* Untrusted! Need to copy and validate ourselves! */
+        uint8_t *u_state;
+        size_t u_state_size;
+
+        ocall_BlockStoreGet(&ret, &stateRoot_[0], stateRoot_.size(),
+                            &u_state, &u_state_size);
+            // TODO: Check SGX Status
+            // TODO: Check return code from ocall
+        ByteArray state_copy(u_state, u_state + u_state_size);
+        ByteArray state_copy_hash = pdo::crypto::ComputeMessageHash(state_copy);
+        pdo::state::StateNode mainStateBlock(state_copy_hash, state_copy);
+        mainStateBlock.Valid(true); //throw exceptio if invalid
+        mainStateBlock.UnBlockifyChildren();
+        pdo::state::StateBlockArray mainChildren = mainStateBlock.GetChildrenBlocks();
+        ByteArray intrinsicStateHash = mainChildren[0];
+
         pvalue = json_object_dotget_string(object, "StateHash");
         if (pvalue != NULL && pvalue[0] != '\0')
         {
             ByteArray decoded_state_hash = base64_decode(pvalue);
 
-            /* Untrusted! Need to copy and validate ourselves! */
-            uint8_t *u_state;
-            size_t u_state_size;
-            int ret;
+            //just check that they are the same
+            pdo::error::ThrowIf<pdo::error::ValueError>(
+                decoded_state_hash != intrinsicStateHash, "intrinsic hash and state hash mismach");
 
-            // Fetch the state from the untrusted block storage
-            ocall_BlockStoreGet(&ret, &decoded_state_hash[0], decoded_state_hash.size(),
-                                &u_state, &u_state_size);
-            // TODO: Check SGX Status
-            // TODO: Check return code from ocall
+            uint8_t *u_intrinsic_state;
+            size_t u_intrinsic_state_size;
+            ocall_BlockStoreGet(&ret, &intrinsicStateHash[0], intrinsicStateHash.size(),
+                                &u_intrinsic_state, &u_intrinsic_state_size);
 
-            /*
-             * Copy the untrusted state to a new buffer so it can't be
-             * modified by untrusted code while this code is working with it
-             */
-            ByteArray state_copy(u_state, u_state + u_state_size);
-
-            DecryptState(state_encryption_key_, state_copy, id_hash, code_hash);
+            ByteArray intrinsicState(u_intrinsic_state, u_intrinsic_state + u_intrinsic_state_size);
+            DecryptState(state_encryption_key_, intrinsicState, id_hash, code_hash);
 
             state_hash_ = ComputeHash();
         }
