@@ -75,8 +75,10 @@ pdo_err_t pdo::enclave_api::base::Initialize(
         if (!g_IsInitialized)
         {
             pdo::SetLogFunction(logFunction);
-            g_Enclave.SetSpid(inSpid);
-            g_Enclave.Load(inPathToEnclave);
+            for (pdo::enclave_api::Enclave& enc : g_Enclave) {
+                enc.SetSpid(inSpid);
+                enc.Load(inPathToEnclave);
+            }
             g_IsInitialized = true;
         }
     } catch (pdo::error::Error& e) {
@@ -101,7 +103,9 @@ pdo_err_t pdo::enclave_api::base::Terminate()
 
     try {
         if (g_IsInitialized) {
-            g_Enclave.Unload();
+            for (pdo::enclave_api::Enclave& enc : g_Enclave) {
+                enc.Unload();
+            }
             g_IsInitialized = false;
         }
     } catch (pdo::error::Error& e) {
@@ -121,7 +125,7 @@ pdo_err_t pdo::enclave_api::base::Terminate()
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 size_t pdo::enclave_api::base::GetEnclaveQuoteSize()
 {
-    return g_Enclave.GetQuoteSize();
+    return g_Enclave[0].GetQuoteSize();
 } // pdo::enclave_api::base::GetEnclaveQuoteSize
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -143,7 +147,7 @@ pdo_err_t pdo::enclave_api::base::GetEpidGroup(
      try {
         // Get the EPID group from the enclave and convert it to big endian
         sgx_epid_group_id_t epidGroup = { 0 };
-        g_Enclave.GetEpidGroup(&epidGroup);
+        g_Enclave[0].GetEpidGroup(&epidGroup);
 
         std::reverse((uint8_t*)&epidGroup, (uint8_t*)&epidGroup + sizeof(epidGroup));
 
@@ -177,7 +181,7 @@ pdo_err_t pdo::enclave_api::base::GetEnclaveCharacteristics(
         sgx_measurement_t enclaveMeasurement;
         sgx_basename_t enclaveBasename;
 
-        g_Enclave.GetEnclaveCharacteristics(
+        g_Enclave[0].GetEnclaveCharacteristics(
             &enclaveMeasurement,
             &enclaveBasename);
 
@@ -188,6 +192,29 @@ pdo_err_t pdo::enclave_api::base::GetEnclaveCharacteristics(
         outEnclaveBasename = pdo::BinaryToHexString(
             enclaveBasename.name,
             sizeof(enclaveBasename.name));
+
+        for (pdo::enclave_api::Enclave& enc : g_Enclave) {
+
+            sgx_enclave_id_t enclaveid = enc.GetEnclaveId();
+            Log(PDO_LOG_DEBUG, "Enclave_ID:  %ld ", (long)enclaveid);
+
+            enc.GetEnclaveCharacteristics(
+                &enclaveMeasurement,
+                &enclaveBasename);
+
+            HexEncodedString logMrEnclave = pdo::BinaryToHexString(
+                enclaveMeasurement.m,
+                sizeof(enclaveMeasurement.m));
+
+            HexEncodedString logEnclaveBasename = pdo::BinaryToHexString(
+                enclaveBasename.name,
+                sizeof(enclaveBasename.name));
+
+            Log(PDO_LOG_DEBUG, "[%u]enclaveMeasurement:  %s ", enc, logMrEnclave.c_str());
+            Log(PDO_LOG_DEBUG, "[%u]enclaveBasename:  %s ", enc, logEnclaveBasename.c_str());
+        }
+
+
 
     } catch (pdo::error::Error& e) {
         pdo::enclave_api::base::SetLastError(e.what());
@@ -211,7 +238,9 @@ pdo_err_t pdo::enclave_api::base::SetSignatureRevocationList(
     pdo_err_t ret = PDO_SUCCESS;
 
     try {
-        g_Enclave.SetSignatureRevocationList(inSignatureRevocationList);
+        for (pdo::enclave_api::Enclave& enc : g_Enclave) {
+            enc.SetSignatureRevocationList(inSignatureRevocationList);
+        }
     } catch (pdo::error::Error& e) {
         pdo::enclave_api::base::SetLastError(e.what());
         ret = e.error_code();
