@@ -21,6 +21,8 @@
 #include <string>
 #include <stdlib.h>
 
+#include "enclave/enclave.h"
+
 namespace pdo
 {
     namespace enclave_api
@@ -38,7 +40,8 @@ namespace pdo
                 const std::string& inContractCreatorId, /* contract creator's verifying key */
                 const std::string& inSerializedSecretList, /* json */
                 Base64EncodedString& outEncryptedContractKey,
-                Base64EncodedString& outContractKeySignature
+                Base64EncodedString& outContractKeySignature,
+                int index
                 );
 
             // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -47,7 +50,8 @@ namespace pdo
                 const Base64EncodedString& inEncryptedSessionKey,
                 const Base64EncodedString& inSerializedRequest,
                 uint32_t& outResponseIdentifier,
-                size_t& outSerializedResponseSize
+                size_t& outSerializedResponseSize,
+                int index
                 );
 
             // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -55,7 +59,14 @@ namespace pdo
                 const Base64EncodedString& inSealedEnclaveData,
                 const uint32_t inResponseIdentifier,
                 const size_t inSerializedResponseSize,
-                Base64EncodedString& outSerializedResponse
+                Base64EncodedString& outSerializedResponse,
+                int index
+                );
+
+            // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+            pdo_err_t DoECall(
+                const std::string& inCallJson,
+                std::string& outResultJson
                 );
 
         } /* contract */

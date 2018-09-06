@@ -36,7 +36,7 @@
 
 extern std::string g_enclaveError;
 
-std::vector<pdo::enclave_api::Enclave> g_Enclave = {pdo::enclave_api::Enclave(), pdo::enclave_api::Enclave(), pdo::enclave_api::Enclave()};
+std::vector<pdo::enclave_api::Enclave> g_Enclave;
 
 namespace pdo {
     namespace error {

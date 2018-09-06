@@ -38,7 +38,17 @@ logger = logging.getLogger(__name__)
 
 from twisted.web import server, resource, http
 from twisted.internet import reactor
+from twisted.internet.defer import DeferredQueue
+from twisted.internet.task import deferLater, cooperate
+from twisted.internet.defer import DeferredSemaphore, gatherResults
+from twisted.web.server import NOT_DONE_YET
 from twisted.web.error import Error
+
+
+# from twisted.python import log
+# log.startLogging(sys.stdout)
+
+from random import randrange
 
 ## XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ## XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -46,7 +56,7 @@ class ContractEnclaveServer(resource.Resource):
     isLeaf = True
 
     ## -----------------------------------------------------------------
-    def __init__(self, config, enclave) :
+    def __init__(self, config, enclave, numWorkers) :
         self.Config = config
 
         self.Enclave = enclave
@@ -64,6 +74,13 @@ class ContractEnclaveServer(resource.Resource):
             'BlockStorePutRequest' : self._HandleBlockStorePutRequest,
         }
 
+
+        self.current_work_num = 1;
+        self.num_of_workers = int(numWorkers)
+        self.workers = DeferredSemaphore(self.num_of_workers)
+        self.jobs = []
+
+
     ## -----------------------------------------------------------------
     def ErrorResponse(self, request, response, msg) :
         """
@@ -80,6 +97,56 @@ class ContractEnclaveServer(resource.Resource):
 
         result = "" if request.method == 'HEAD' else (msg + '\n')
         return result.encode('utf8')
+
+
+    def async(self, operation, minfo, request):
+
+        logger.info('Starting Job; %i:%s', self.current_work_num, operation)
+        d = deferLater(reactor, 0, self.executeJob, operation, minfo, request)
+
+        def thereIsAnError(failure):
+            failure.trap(Error, Exception)
+
+        def isDone(ignored):
+            logger.info('Finishing Job; %i:%s', self.current_work_num, operation)
+            self.current_work_num += 1
+
+        d.addErrback(thereIsAnError)
+        d.addCallback(isDone)
+        return d
+
+
+    def executeJob(self, operation, minfo, request):
+        """
+        and finally execute the associated method and send back the results
+        """
+        try :
+            response_dict = self.RequestMap[operation](minfo)
+
+            encoding = request.getHeader('Content-Type')
+            if encoding == 'application/json' :
+                response = json.dumps(response_dict)
+            # elif encoding == 'application/cbor' :
+            #     response = cbor.dumps(response_dict)
+
+            logger.info('response[%s]: %s', encoding, response)
+            request.setHeader('content-type', encoding)
+            request.setResponseCode(http.OK)
+            request.write(response.encode('utf8'))
+            request.finish()
+
+        except Error as e :
+            #logger.exception('exception while processing request %s', request.path)
+            #msg = 'exception while processing request {0}; {1}'.format(request.path, str(e))
+            request.write(self.ErrorResponse(request, int(e.status), e.message))
+            request.finish()
+
+        except :
+            logger.exception('unknown exception while processing request %s', request.path)
+            msg = 'unknown exception processing http request {0}'.format(request.path)
+            request.write(self.ErrorResponse(request, http.BAD_REQUEST, msg))
+            request.finish()
+
 
     ## -----------------------------------------------------------------
     def render_GET(self, request) :
@@ -128,30 +195,15 @@ class ContractEnclaveServer(resource.Resource):
             msg = 'unknown request {0}'.format(operation)
             return self.ErrorResponse(request, http.BAD_REQUEST, msg)
 
-        # and finally execute the associated method and send back the results
-        try :
-            logger.debug('received request %s', operation)
 
-            response_dict = self.RequestMap[operation](minfo)
-            if encoding == 'application/json' :
-                response = json.dumps(response_dict)
-            # elif encoding == 'application/cbor' :
-            #     response = cbor.dumps(response_dict)
+        # Add operation to queue
+        logger.debug('received request %s', operation)
 
-            logger.debug('response[%s]: %s', encoding, response)
-            request.setHeader('content-type', encoding)
-            request.setResponseCode(http.OK)
-            return response.encode('utf8')
+        self.jobs.append(self.workers.run(self.async, operation, minfo, request))
 
-        except Error as e :
-            #logger.exception('exception while processing request %s', request.path)
-            #msg = 'exception while processing request {0}; {1}'.format(request.path, str(e))
-            return self.ErrorResponse(request, int(e.status), e.message)
+        logger.info('Job %i:%s ...waiting', self.current_work_num, operation)
 
-        except :
-            logger.exception('unknown exception while processing request %s', request.path)
-            msg = 'unknown exception processing http request {0}'.format(request.path)
-            return self.ErrorResponse(request, http.BAD_REQUEST, msg)
+        return NOT_DONE_YET
 
     ## -----------------------------------------------------------------
     def _HandleUpdateContractRequest(self, minfo) :
@@ -355,9 +407,10 @@ def CreateEnclaveData(enclave_config, ledger_config, txn_keys) :
 # -----------------------------------------------------------------
 def RunEnclaveService(config, enclave) :
     httpport = config['EnclaveService']['HttpPort']
+    numWorkers = config['EnclaveModule']['num_of_enclaves']
     logger.info('service started on port %s', httpport)
 
-    root = ContractEnclaveServer(config, enclave)
+    root = ContractEnclaveServer(config, enclave, numWorkers)
     site = server.Site(root)
     reactor.listenTCP(httpport, site)
 
@@ -405,6 +458,7 @@ def LocalMain(config) :
         sys.exit(-1)
 
     logger.info('start service for enclave\n%s', enclave.verifying_key)
+
     RunEnclaveService(config, enclave)
 
 ## XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX

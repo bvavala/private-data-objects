@@ -29,3 +29,4 @@ std::string contract_handle_contract_request(
     const std::string& encryptedSessionKey,
     const std::string& serializedRequest
     );
+

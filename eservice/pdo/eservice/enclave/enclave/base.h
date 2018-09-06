@@ -59,6 +59,7 @@ namespace pdo
             pdo_err_t Initialize(
                 const std::string& inPathToEnclave,
                 const HexEncodedString& inSpid,
+                const int numOfEnclaves,
                 pdo_log_t logFunction
                 );
 

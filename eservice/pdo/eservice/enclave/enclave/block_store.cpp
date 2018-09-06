@@ -24,6 +24,7 @@
 #include "log.h"
 #include "types.h"
 #include "hex_string.h"
+#include "swig_utils.h"
 
 #include "enclave/base.h"
 #include "enclave/block_store.h"
@@ -188,7 +189,7 @@ pdo_err_t pdo::enclave_api::block_store::BlockStoreGet(
     // Get the size of the state block
     size_t value_size;
     int ret = BlockStoreHead(inKey.data(), inKey.size(), &value_size);
-    g_Enclave.ThrowPDOError((pdo_err_t)ret);
+    ThrowPDOError((pdo_err_t)ret);
 
     // Resize the output array
     outValue.resize(value_size);
@@ -196,7 +197,8 @@ pdo_err_t pdo::enclave_api::block_store::BlockStoreGet(
     // Fetch the state from the block storage
     ret = BlockStoreGet(inKey.data(), inKey.size(),
                         &outValue[0], value_size);
-    g_Enclave.ThrowPDOError((pdo_err_t)ret);
+    ThrowPDOError((pdo_err_t)ret);
+    // g_Enclave.ThrowPDOError((pdo_err_t)ret);
 
     return result;
 }
@@ -211,7 +213,7 @@ pdo_err_t pdo::enclave_api::block_store::BlockStorePut(
 
     int ret = BlockStorePut(inKey.data(), inKey.size(),
                             inValue.data(), inValue.size());
-    g_Enclave.ThrowPDOError((pdo_err_t)ret);
+    ThrowPDOError((pdo_err_t)ret);
 
     return result;
 }

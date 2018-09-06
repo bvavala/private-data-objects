@@ -66,6 +66,7 @@ std::string pdo::enclave_api::base::GetLastError(void)
 pdo_err_t pdo::enclave_api::base::Initialize(
     const std::string& inPathToEnclave,
     const HexEncodedString& inSpid,
+    const int numOfEnclaves,
     pdo_log_t logFunction
     )
 {
@@ -74,6 +75,11 @@ pdo_err_t pdo::enclave_api::base::Initialize(
     try {
         if (!g_IsInitialized)
         {
+            g_Enclave.reserve(numOfEnclaves);
+            for(int i = 0; i < numOfEnclaves; ++i ){
+                g_Enclave.push_back(pdo::enclave_api::Enclave());
+            }
+
             pdo::SetLogFunction(logFunction);
             for (pdo::enclave_api::Enclave& enc : g_Enclave) {
                 enc.SetSpid(inSpid);
@@ -210,8 +216,8 @@ pdo_err_t pdo::enclave_api::base::GetEnclaveCharacteristics(
                 enclaveBasename.name,
                 sizeof(enclaveBasename.name));
 
-            Log(PDO_LOG_DEBUG, "[%u]enclaveMeasurement:  %s ", enc, logMrEnclave.c_str());
-            Log(PDO_LOG_DEBUG, "[%u]enclaveBasename:  %s ", enc, logEnclaveBasename.c_str());
+            // Log(PDO_LOG_DEBUG, "[%u]enclaveMeasurement:  %s ", enc, logMrEnclave.c_str());
+            // Log(PDO_LOG_DEBUG, "[%u]enclaveBasename:  %s ", enc, logEnclaveBasename.c_str());
         }
 
 
