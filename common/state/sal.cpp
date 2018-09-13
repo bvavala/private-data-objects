@@ -18,10 +18,12 @@
 #include "state.h"
 #include "eusebio.h"
 #include "state_status.h"
-#include "pdo_error.h"
-#include "enclave_utils.h"
+#include "error.h"
 
 #include "StateUtils.h"
+
+#define SAFE_LOG(LEVEL, FMT, ...)
+
 
 /* 
 Global variable for the State Abstraction layer.

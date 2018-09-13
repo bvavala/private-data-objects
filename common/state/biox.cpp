@@ -14,13 +14,29 @@
  */
 
 #include "state_status.h"
-#include "enclave_t.h"
 #include <string>
 #include <vector>
 #include "crypto.h"
 #include "zero.h"
 #include "types.h"
-#include "enclave_utils.h"
+
+#if _UNTRUSTED_ == 1
+
+#if defined (__cplusplus)
+extern "C"
+{
+#endif
+    #include "u_state.h"
+#if defined (__cplusplus)
+} // extern "C"
+#endif
+
+#else // _UNTRUSTED_ == 0
+    #include "wrapper_test_avalanche.h"
+#endif // _UNTRUSTED_
+
+
+#define SAFE_LOG(LEVEL, FMT, ...)
 
 /*
 BIOX is the Block I/O interface
@@ -63,5 +79,5 @@ state_status_t biox_out(
 }
 
 void biox_sync() {
-    test_avalanche_sync();
+    wrapper_test_avalanche_sync();
 }

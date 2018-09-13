@@ -22,3 +22,5 @@ void test_avalanche_wheretoget(
     size_t* block_size);
 
 void test_avalanche_wheretoput(size_t block_size, uint8_t** address);
+
+void test_avalanche_sync();

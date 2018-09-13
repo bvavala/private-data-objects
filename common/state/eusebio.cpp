@@ -17,7 +17,6 @@
 #include "crypto.h"
 #include "state_status.h"
 #include "types.h"
-#include "enclave_utils.h"
 
 //#ifdef EUSEBIO_NO_DEFAULT
     #define EUSEBIO_ON_BIOX

@@ -13,23 +13,24 @@
  * limitations under the License.
  */
 
+#include "wrapper_test_avalanche.h"
 #include "enclave_t.h"
-#include "enclave_utils.h"
-/*
-BLIX is the Block locator interface
+void wrapper_test_avalanche_wheretoget(
+    const uint8_t* block_authentication_id,
+    size_t block_authentication_id_size,
+    uint8_t** address,
+    size_t* block_size) {
 
-Notation:
-    uas: untrusted address space
-    tas: trusted address space
-*/
-uint8_t* blix_wheretogetblock(uint8_t* block_authentication_id, size_t block_authentication_id_size, size_t* block_size) {
-    uint8_t* address = NULL;
-    test_avalanche_wheretoget(block_authentication_id, block_authentication_id_size, &address, block_size);
-    return address;
+    test_avalanche_wheretoget(block_authentication_id, block_authentication_id_size, address, block_size);
 }
 
-uint8_t* blix_wheretoputblock(size_t block_size) {
-    uint8_t* address = NULL;
-    test_avalanche_wheretoput(block_size, &address);
-    return address;
+void wrapper_test_avalanche_wheretoput(
+    size_t block_size,
+    uint8_t** address) {
+
+    test_avalanche_wheretoput(block_size, address);
+}
+
+void wrapper_test_avalanche_sync() {
+    test_avalanche_sync();
 }

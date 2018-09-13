@@ -15,9 +15,9 @@
 
 enclave {
     trusted {
-        public void test_biox();
-        public void test_kv();
-        public void test_sal();
+        //public void test_biox();
+        //public void test_kv();
+        //public void test_sal();
     };
 
     untrusted {

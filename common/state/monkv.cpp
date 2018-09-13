@@ -16,7 +16,6 @@
 #include "monkv.h"
 #include "keivers.h"
 #include "sal.h"
-#include "enclave_utils.h"
 
 pdo::state::Monkv::Monkv(ByteArray& id) : Keivers(id) {
     g_sal.open(id, &handle); 

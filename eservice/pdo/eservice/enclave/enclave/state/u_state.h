@@ -15,6 +15,8 @@
 
 #pragma once
 
-#ifdef DEBUG
-extern void test_sal();
-#endif
+#define wrapper_test_avalanche_wheretoget   test_avalanche_wheretoget
+#define wrapper_test_avalanche_wheretoput   test_avalanche_wheretoput
+#define wrapper_test_avalanche_sync         test_avalanche_sync
+
+#include "test_avalanche.h"
