@@ -15,4 +15,6 @@
 
 #pragma once
 
+#ifdef DEBUG
 extern void test_biox();
+#endif

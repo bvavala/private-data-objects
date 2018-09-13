@@ -18,9 +18,30 @@
 #include "crypto.h"
 #include "error.h"
 
+pdo::state::StateNode::StateNode() {
+    blockId_ = new StateBlockId();
+    stateBlock_ = new StateBlock();
+}
+
 pdo::state::StateNode::StateNode(StateBlockId& blockId, StateBlock& stateBlock) {
     blockId_ = &blockId;
     stateBlock_ = &stateBlock;
+}
+
+pdo::state::StateNode::~StateNode() {
+    delete stateBlock_;
+    if(!hasParent_) {
+        delete blockId_;
+        hasParent_ = false;
+    }
+    else {
+        //do not delete blockid, it is part of children of a node above in hierarchy
+    }
+    while(!ChildrenArray_.empty()) {
+        StateBlockIdRef childId = ChildrenArray_.back();
+        ChildrenArray_.pop_back();
+        delete childId;
+    }
 }
 
 bool pdo::state::StateNode::Valid() {
@@ -51,8 +72,13 @@ StateBlock& pdo::state::StateNode::GetBlock() {
     return *stateBlock_;
 }
 
-void pdo::state::StateNode::AppendChild(StateBlockId& blockId) {
-    ChildrenArray_.push_back(blockId);
+void pdo::state::StateNode::AppendChild(StateNode& childNode) {
+    ChildrenArray_.push_back(&childNode.GetBlockId());
+    childNode.SetHasParent();
+}
+
+void pdo::state::StateNode::SetHasParent() {
+    hasParent_ = true;
 }
 
 void pdo::state::StateNode::BlockifyChildren() {
@@ -68,9 +94,12 @@ void pdo::state::StateNode::BlockifyChildren() {
     //put children
     while(!ChildrenArray_.empty()) {
         //append first child to block
-        stateBlock_->insert(stateBlock_->end(), ChildrenArray_[0].begin(), ChildrenArray_[0].end());
+        StateBlockIdRef childRef = ChildrenArray_[0];
+        stateBlock_->insert(stateBlock_->end(), childRef->begin(), childRef->end());
         //remove first child from array
         ChildrenArray_.erase(ChildrenArray_.begin());
+        //delete child
+        delete childRef;
     }
 }
 
@@ -92,12 +121,22 @@ void pdo::state::StateNode::UnBlockifyChildren() {
     //get the children
     ChildrenArray_.clear();
     while(!stateBlock_->empty()) {
-        StateBlockId childId(stateBlock_->begin(), stateBlock_->begin() + SHA256_DIGEST_LENGTH);
+        StateBlockIdRef childId = new StateBlockId(stateBlock_->begin(), stateBlock_->begin() + SHA256_DIGEST_LENGTH);
         ChildrenArray_.push_back(childId);
         stateBlock_->erase(stateBlock_->begin(), stateBlock_->begin() + SHA256_DIGEST_LENGTH);
     }
 }
 
-StateBlockArray pdo::state::StateNode::GetChildrenBlocks() {
+StateBlockIdRefArray pdo::state::StateNode::GetChildrenBlocks() {
     return ChildrenArray_;
+}
+
+StateBlockIdRef pdo::state::StateNode::LookupChild(StateBlockId& childId) {
+    unsigned int i;
+    for(i=0; i<ChildrenArray_.size(); i++) {
+        if(*ChildrenArray_[i] == childId) {
+            return ChildrenArray_[i];
+        }
+    }
+    return NULL;
 }

@@ -13,22 +13,33 @@
  * limitations under the License.
  */
 
-enclave {
-    trusted {
-        public void test_biox();
-        public void test_kv();
-        public void test_sal();
-    };
+#pragma once
 
-    untrusted {
-        void test_avalanche_wheretoget(
-            [in, size=block_authentication_id_size] const uint8_t* block_authentication_id,
-            size_t block_authentication_id_size,
-            [out] uint8_t** address,
-            [out] size_t* block_size);
-        void test_avalanche_wheretoput(
-            size_t block_size,
-            [out] uint8_t** address);       
-        void test_avalanche_sync();
-    };
-};
+#include "types.h"
+#include "state_status.h"
+
+
+typedef enum {
+    EUSEBIO_NO_CRYPTO,
+    EUSEBIO_AES_GCM
+} eusebio_crypto_algo_e;
+
+typedef struct {
+    uint8_t* key;
+    size_t key_size;
+    eusebio_crypto_algo_e crypto_algo;
+} eusebio_ctx_t;
+
+state_status_t eusebio_set(eusebio_ctx_t ctx);
+
+state_status_t eusebio_fetch(
+    uint8_t* block_id,
+    size_t block_id_size,
+    eusebio_crypto_algo_e crypto_algo,
+    uint8_t** block,
+    size_t* block_size);
+
+state_status_t eusebio_evict(
+    uint8_t* block,
+    size_t block_size,
+    eusebio_crypto_algo_e crypto_algo);

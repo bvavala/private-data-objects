@@ -181,15 +181,15 @@ ByteArray ContractResponse::SerializeAndEncrypt(
 
         ocall_BlockStorePut(&ret, &contract_state_.state_hash_[0], contract_state_.state_hash_.size(),
                             &contract_state_.encrypted_state_[0], contract_state_.encrypted_state_.size());
-        ByteArray mainStateBlockId, mainStateBlock;
-        pdo::state::StateNode mainStateNode(mainStateBlockId, mainStateBlock);
+        pdo::state::StateNode mainStateNode;
         ByteArray intrinsicStateId = contract_state_.state_hash_;
-        mainStateNode.AppendChild(intrinsicStateId);
+        pdo::state::StateNode childNode(intrinsicStateId, *new StateBlock());
+        mainStateNode.AppendChild(childNode);
         //maybe add other children
         mainStateNode.BlockifyChildren();
         mainStateNode.ReIdentify();
-        mainStateBlockId = mainStateNode.GetBlockId();
-        mainStateBlock =  mainStateNode.GetBlock();
+        ByteArray mainStateBlockId = mainStateNode.GetBlockId();
+        ByteArray mainStateBlock =  mainStateNode.GetBlock();
         ocall_BlockStorePut(&ret, &mainStateBlockId[0], mainStateBlockId.size(),
                             &mainStateBlock[0], mainStateBlock.size());
         Base64EncodedString encoded_state_root = base64_encode(mainStateBlockId);

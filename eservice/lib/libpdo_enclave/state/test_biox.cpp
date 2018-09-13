@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#ifdef DEBUG
+
 #include "enclave_t.h"
 #include "biox.h"
 #include "pdo_error.h"
@@ -59,3 +61,5 @@ void test_biox() {
     biox_sync();
     SAFE_LOG(PDO_LOG_INFO, "*************** end of test_biox *****************\n");
 }
+
+#endif //DEBUG

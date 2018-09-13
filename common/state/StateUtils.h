@@ -29,9 +29,12 @@ namespace pdo
         protected:
             StateBlockId* blockId_;
             StateBlock* stateBlock_;
-            StateBlockArray ChildrenArray_ = {};
+            StateBlockIdRefArray ChildrenArray_ = {};
+            bool hasParent_ = false;
 
         public:
+            StateNode();
+            ~StateNode();
             StateNode(StateBlockId& blockId, StateBlock& stateBlock);
             bool Valid();
             bool Valid(bool throwEx);
@@ -39,13 +42,16 @@ namespace pdo
             StateBlockId& GetBlockId();
             StateBlock& GetBlock();
             
-            void AppendChild(StateBlockId& blockId);
+            void AppendChild(StateNode& childNode);
+            void SetHasParent();
             void BlockifyChildren();
             void UnBlockifyChildren();
-            StateBlockArray GetChildrenBlocks();
+            StateBlockIdRefArray GetChildrenBlocks();
+            StateBlockId* LookupChild(StateBlockId& childId);
         };
 
         typedef StateNode State;
+        typedef StateNode* StateNodeRef;
 
         typedef std::vector<StateNode> StateNodeArray;
 

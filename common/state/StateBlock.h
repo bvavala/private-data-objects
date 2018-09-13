@@ -23,7 +23,12 @@
 namespace pdo {
     namespace state {
         typedef ByteArray StateBlock;
+        typedef ByteArray* StateBlockRef;
+
         typedef ByteArray StateBlockId;
+        typedef ByteArray* StateBlockIdRef;
+
         typedef std::vector<StateBlockId> StateBlockArray;
+        typedef std::vector<StateBlockIdRef> StateBlockIdRefArray;
     }
 }

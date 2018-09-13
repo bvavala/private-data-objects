@@ -15,10 +15,10 @@
 
 #pragma once
 
-namespace pdo {
-    namespace state {
-        uint8_t* test_avalanche_wheretoget(const uint8_t* block_authentication_id_size,
-                                            size_t block_authentication_id_size);
-        uint8_t* test_avalanche_wheretoput(size_t block_size);
-    } // namespace state
-} // namespace pdo
+void test_avalanche_wheretoget(
+    const uint8_t* block_authentication_id,
+    size_t block_authentication_id_size,
+    uint8_t** address,
+    size_t* block_size);
+
+void test_avalanche_wheretoput(size_t block_size, uint8_t** address);

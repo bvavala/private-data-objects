@@ -13,22 +13,27 @@
  * limitations under the License.
  */
 
-enclave {
-    trusted {
-        public void test_biox();
-        public void test_kv();
-        public void test_sal();
-    };
+#include "portage_kv.h"
+#include "keivers.h"
 
-    untrusted {
-        void test_avalanche_wheretoget(
-            [in, size=block_authentication_id_size] const uint8_t* block_authentication_id,
-            size_t block_authentication_id_size,
-            [out] uint8_t** address,
-            [out] size_t* block_size);
-        void test_avalanche_wheretoput(
-            size_t block_size,
-            [out] uint8_t** address);       
-        void test_avalanche_sync();
-    };
-};
+//TODO move the definition somewhere else
+#define PORTAGE_ON_MONKV
+
+#ifdef PORTAGE_ON_MONKV
+#include "monkv.h"
+#endif
+
+pdo::state::Portage::Portage(ByteArray& id) : Keivers(id) {
+#ifdef PORTAGE_ON_MONKV
+    Monkv* monkv = new pdo::state::Monkv(id);
+    kv_ = monkv;
+#endif
+}
+
+ByteArray pdo::state::Portage::Get(ByteArray& key) {
+    return kv_->Get(key);
+}
+
+void pdo::state::Portage::Put(ByteArray& key, ByteArray& value) {
+    kv_->Put(key, value);
+}

@@ -137,8 +137,8 @@ void ContractState::Unpack(const ByteArray& state_encryption_key_,
         pdo::state::StateNode mainStateBlock(state_copy_hash, state_copy);
         mainStateBlock.Valid(true); //throw exceptio if invalid
         mainStateBlock.UnBlockifyChildren();
-        pdo::state::StateBlockArray mainChildren = mainStateBlock.GetChildrenBlocks();
-        ByteArray intrinsicStateHash = mainChildren[0];
+        pdo::state::StateBlockIdRefArray mainChildren = mainStateBlock.GetChildrenBlocks();
+        ByteArray intrinsicStateHash = *(mainChildren[0]);
 
         pvalue = json_object_dotget_string(object, "StateHash");
         if (pvalue != NULL && pvalue[0] != '\0')

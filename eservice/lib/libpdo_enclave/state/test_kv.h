@@ -13,22 +13,8 @@
  * limitations under the License.
  */
 
-enclave {
-    trusted {
-        public void test_biox();
-        public void test_kv();
-        public void test_sal();
-    };
+#pragma once
 
-    untrusted {
-        void test_avalanche_wheretoget(
-            [in, size=block_authentication_id_size] const uint8_t* block_authentication_id,
-            size_t block_authentication_id_size,
-            [out] uint8_t** address,
-            [out] size_t* block_size);
-        void test_avalanche_wheretoput(
-            size_t block_size,
-            [out] uint8_t** address);       
-        void test_avalanche_sync();
-    };
-};
+#ifdef DEBUG
+extern void test_kv();
+#endif
