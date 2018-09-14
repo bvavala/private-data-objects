@@ -178,13 +178,12 @@ ByteArray ContractResponse::SerializeAndEncrypt(
 
         // --------------- state ---------------
         int ret;
-
         ocall_BlockStorePut(&ret, &contract_state_.state_hash_[0], contract_state_.state_hash_.size(),
                             &contract_state_.encrypted_state_[0], contract_state_.encrypted_state_.size());
         pdo::state::StateNode mainStateNode;
-        ByteArray intrinsicStateId = contract_state_.state_hash_;
-        pdo::state::StateNode childNode(intrinsicStateId, *new StateBlock());
-        mainStateNode.AppendChild(childNode);
+        ByteArray* intrinsicStateId = new ByteArray(contract_state_.state_hash_.begin(), contract_state_.state_hash_.end());
+        pdo::state::StateNode* childNode = new StateNode(*intrinsicStateId, *new StateBlock());
+        mainStateNode.AppendChild(*childNode);
         //maybe add other children
         mainStateNode.BlockifyChildren();
         mainStateNode.ReIdentify();

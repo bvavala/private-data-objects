@@ -134,12 +134,12 @@ void ContractState::Unpack(const ByteArray& state_encryption_key_,
             // TODO: Check return code from ocall
         ByteArray state_copy(u_state, u_state + u_state_size);
         ByteArray state_copy_hash = pdo::crypto::ComputeMessageHash(state_copy);
-        pdo::state::StateNode mainStateBlock(state_copy_hash, state_copy);
-        mainStateBlock.Valid(true); //throw exceptio if invalid
-        mainStateBlock.UnBlockifyChildren();
-        pdo::state::StateBlockIdRefArray mainChildren = mainStateBlock.GetChildrenBlocks();
+        pdo::state::StateNode mainStateNode(*new ByteArray(state_copy_hash.begin(), state_copy_hash.end()),
+            *new ByteArray(state_copy.begin(), state_copy.end()));
+        mainStateNode.Valid(true); //throw exceptio if invalid
+        mainStateNode.UnBlockifyChildren();
+        pdo::state::StateBlockIdRefArray mainChildren = mainStateNode.GetChildrenBlocks();
         ByteArray intrinsicStateHash = *(mainChildren[0]);
-
         pvalue = json_object_dotget_string(object, "StateHash");
         if (pvalue != NULL && pvalue[0] != '\0')
         {
@@ -148,7 +148,6 @@ void ContractState::Unpack(const ByteArray& state_encryption_key_,
             //just check that they are the same
             pdo::error::ThrowIf<pdo::error::ValueError>(
                 decoded_state_hash != intrinsicStateHash, "intrinsic hash and state hash mismach");
-
             uint8_t *u_intrinsic_state;
             size_t u_intrinsic_state_size;
             ocall_BlockStoreGet(&ret, &intrinsicStateHash[0], intrinsicStateHash.size(),
