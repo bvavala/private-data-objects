@@ -58,10 +58,10 @@ void test_biox() {
         block_address_destination = blix_wheretoputblock(BLOCK_SIZE);
         r = biox_out(block_address_destination, block, BLOCK_SIZE);
         if(r==STATE_SUCCESS) {
-            SAFE_LOG(PDO_LOG_INFO, "block %d biox_out success\n");
+            SAFE_LOG(PDO_LOG_INFO, "block %u biox_out success\n", i);
         }
         else {
-             SAFE_LOG(PDO_LOG_INFO, "block %d biox_out error\n");
+             SAFE_LOG(PDO_LOG_INFO, "block %u biox_out error\n", i);
         }
     }
     

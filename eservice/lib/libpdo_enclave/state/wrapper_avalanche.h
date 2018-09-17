@@ -17,14 +17,14 @@
 
 #include "types.h"
 
-void wrapper_test_avalanche_wheretoget(
+void wrapper_avalanche_wheretoget(
     const uint8_t* block_authentication_id,
     size_t block_authentication_id_size,
     uint8_t** address,
     size_t* block_size);
 
-void wrapper_test_avalanche_wheretoput(
+void wrapper_avalanche_wheretoput(
     size_t block_size,
     uint8_t** address);
 
-void wrapper_test_avalanche_sync();
+void wrapper_avalanche_sync();

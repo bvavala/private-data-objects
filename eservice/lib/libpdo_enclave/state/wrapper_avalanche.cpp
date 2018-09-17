@@ -13,14 +13,24 @@
  * limitations under the License.
  */
 
-#pragma once
-
-void test_avalanche_wheretoget(
+#include "wrapper_avalanche.h"
+#include "enclave_t.h"
+void wrapper_avalanche_wheretoget(
     const uint8_t* block_authentication_id,
     size_t block_authentication_id_size,
     uint8_t** address,
-    size_t* block_size);
+    size_t* block_size) {
 
-void test_avalanche_wheretoput(size_t block_size, uint8_t** address);
+    avalanche_wheretoget(block_authentication_id, block_authentication_id_size, address, block_size);
+}
 
-void test_avalanche_sync();
+void wrapper_avalanche_wheretoput(
+    size_t block_size,
+    uint8_t** address) {
+
+    avalanche_wheretoput(block_size, address);
+}
+
+void wrapper_avalanche_sync() {
+    avalanche_sync();
+}

@@ -50,7 +50,7 @@ extern "C" {
 The wheretoget operation returns the address (and size) in untrusted address space of the buffer
 that contains the requested block.
 */
-void test_avalanche_wheretoget(
+void avalanche_wheretoget(
     const uint8_t* block_authentication_id,
     size_t block_authentication_id_size,
     uint8_t** address,
@@ -64,7 +64,7 @@ void test_avalanche_wheretoget(
     *address = NULL;
     //go through all blocks searching for the block authentication id
     void* block_at = NULL;
-    size_t bsize;
+    size_t bsize = 0;
     int i;
     for(i=0; i<AVALANCHE_CACHE_SIZE; i++) {
         if(avalanche_cache[i].unavailable &&
@@ -89,7 +89,7 @@ The wheretoput operation return an address in untrusted address space where the 
 The code is not aware of when such copy is done and terminates, it just makes enough memory available.
 A separate sync call is used to signal the completion of the write operation.
 */
-void test_avalanche_wheretoput(size_t block_size, uint8_t** address) {
+void avalanche_wheretoput(size_t block_size, uint8_t** address) {
     if(!filled_spots)
         __init();
     *address = NULL;
@@ -122,7 +122,7 @@ void test_avalanche_wheretoput(size_t block_size, uint8_t** address) {
 /*
 The sync operation is essentially used to signal that the data has been copied in untrusted address space.
 */
-void test_avalanche_sync() {
+void avalanche_sync() {
     //update all cached blocks with zero bytes key, by computing the key
     int i;
     for(i=0; i<AVALANCHE_CACHE_SIZE; i++) {

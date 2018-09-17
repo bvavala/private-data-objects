@@ -113,7 +113,7 @@ module_files = [
     os.path.join(module_src_path, 'enclave/signup.cpp'),
     os.path.join(module_src_path, 'enclave/enclave.cpp'),
     os.path.join(module_src_path, 'enclave/block_store.cpp'),
-    os.path.join(module_src_path, 'enclave/state/test_avalanche.cpp'),
+    os.path.join(module_src_path, 'enclave/state/avalanche.cpp'),
     os.path.join(module_src_path, 'enclave_info.cpp'),
     os.path.join(module_src_path, 'signup_info.cpp'),
     os.path.join(module_src_path, 'contract.cpp')

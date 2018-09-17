@@ -23,11 +23,15 @@ pdo::state::Monkv::Monkv(ByteArray& id) : Keivers(id) {
 
 pdo::state::Monkv::~Monkv() {
     ByteArray id;
-    g_sal.close(&handle, &id);
+    if(handle) {
+        g_sal.close(&handle, &id);
+    }
 }
 
 void pdo::state::Monkv::Uninit(ByteArray& id) {
-    g_sal.close(&handle, &id);
+    if(handle) {
+        g_sal.close(&handle, &id);
+    }
 }
 
 ByteArray pdo::state::Monkv::Get(ByteArray& key) {

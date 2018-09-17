@@ -24,7 +24,6 @@
 
 #define SAFE_LOG(LEVEL, FMT, ...)
 
-
 /* 
 Global variable for the State Abstraction layer.
 This is used by any code developed above the abstraction to access
@@ -203,12 +202,10 @@ The close operation frees resources, evicts the blocks that are now unnecessary 
 state_status_t pdo::state::sal::close(void **handle, StateBlockId* id) {
     sal_handle* h = *(sal_handle**)handle;
     state_status_t ret;
-
     //get root identity to be returned
     h->node->ReIdentify();
     *id = h->node->GetBlockId();
     //evict unnecessary block
-    
     StateBlock& b = h->node->GetBlock();
     ret = eusebio_evict(b.data(), b.size(), EUSEBIO_NO_CRYPTO);
     pdo::error::ThrowIf<pdo::error::ValueError>(

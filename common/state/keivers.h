@@ -27,6 +27,7 @@ namespace pdo
             void *handle;
         public:
             Keivers(ByteArray& id) {}
+            virtual ~Keivers() {}
             virtual void Uninit(ByteArray& id) = 0;
             virtual ByteArray Get(ByteArray& key) = 0;
             virtual void Put(ByteArray& key, ByteArray& value) = 0;

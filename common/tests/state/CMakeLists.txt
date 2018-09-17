@@ -25,7 +25,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TESTS_OUTPUT_DIR})
 SET(UNTRUSTED_TEST_NAME u_state_test)
 PROJECT(${UNTRUSTED_TEST_NAME} CXX)
 
-ADD_EXECUTABLE(${UNTRUSTED_TEST_NAME} untrusted/test.cpp untrusted/test_kv.cpp untrusted/test_biox.cpp untrusted/test_sal.cpp ${PDO_TOP_DIR}/eservice/pdo/eservice/enclave/enclave/state/test_avalanche.cpp ${PDO_TOP_DIR}/eservice/pdo/eservice/enclave/log.cpp)
+ADD_EXECUTABLE(${UNTRUSTED_TEST_NAME} untrusted/test.cpp untrusted/test_kv.cpp untrusted/test_biox.cpp untrusted/test_sal.cpp ${PDO_TOP_DIR}/eservice/pdo/eservice/enclave/enclave/state/avalanche.cpp ${PDO_TOP_DIR}/eservice/pdo/eservice/enclave/log.cpp)
 
 # Same compile options as untrusted library
 TARGET_INCLUDE_DIRECTORIES(${UNTRUSTED_TEST_NAME} PUBLIC ${SGX_SDK}/include)

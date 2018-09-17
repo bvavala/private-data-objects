@@ -27,7 +27,7 @@ extern "C"
 
 #else // _UNTRUSTED_ == 0
     //#include "enclave_t.h"
-    #include "wrapper_test_avalanche.h"
+    #include "wrapper_avalanche.h"
 #endif // _UNTRUSTED_
 
 /*
@@ -39,12 +39,12 @@ Notation:
 */
 uint8_t* blix_wheretogetblock(uint8_t* block_authentication_id, size_t block_authentication_id_size, size_t* block_size) {
     uint8_t* address = NULL;
-    wrapper_test_avalanche_wheretoget(block_authentication_id, block_authentication_id_size, &address, block_size);
+    wrapper_avalanche_wheretoget(block_authentication_id, block_authentication_id_size, &address, block_size);
     return address;
 }
 
 uint8_t* blix_wheretoputblock(size_t block_size) {
     uint8_t* address = NULL;
-    wrapper_test_avalanche_wheretoput(block_size, &address);
+    wrapper_avalanche_wheretoput(block_size, &address);
     return address;
 }

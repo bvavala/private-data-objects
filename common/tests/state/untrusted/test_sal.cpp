@@ -109,7 +109,6 @@ void test_sal() {
     pdo::error::ThrowIf<pdo::error::RuntimeError>(
             ret != STATE_SUCCESS, "error uninit\n");
     SAFE_LOG(PDO_LOG_INFO, "SAL uninit: id %s\n", ByteArrayToHexEncodedString(new_sal_id).c_str());
-
     if(new_id == id) {
         // internal hash data does nto match
         SAFE_LOG(PDO_LOG_INFO, "SUCCESS: hash of unmodified data matches previous one\n");
@@ -130,6 +129,7 @@ void test_sal() {
         return;
     }
 
+    //repeat for shifted reading
     NEWSAL.init(sal_id);
     ret = NEWSAL.open(id, &h);
     NEWSAL.seek(h, 5);

@@ -15,8 +15,8 @@
 
 #pragma once
 
-#define wrapper_test_avalanche_wheretoget   test_avalanche_wheretoget
-#define wrapper_test_avalanche_wheretoput   test_avalanche_wheretoput
-#define wrapper_test_avalanche_sync         test_avalanche_sync
+#define wrapper_avalanche_wheretoget   avalanche_wheretoget
+#define wrapper_avalanche_wheretoput   avalanche_wheretoput
+#define wrapper_avalanche_sync         avalanche_sync
 
-#include "test_avalanche.h"
+#include "avalanche.h"

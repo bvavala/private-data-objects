@@ -29,7 +29,7 @@ SWIG_SOURCES = \
 	enclave/signup.cpp \
 	enclave/enclave.cpp \
 	enclave/block_store.cpp \
-	enclave/state/test_avalanche.cpp \
+	enclave/state/avalanche.cpp \
 	enclave_info.cpp \
 	signup_info.cpp \
 	contract.cpp

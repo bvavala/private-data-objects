@@ -32,7 +32,7 @@ extern "C"
 #endif
 
 #else // _UNTRUSTED_ == 0
-    #include "wrapper_test_avalanche.h"
+    #include "wrapper_avalanche.h"
 #endif // _UNTRUSTED_
 
 
@@ -79,5 +79,5 @@ state_status_t biox_out(
 }
 
 void biox_sync() {
-    wrapper_test_avalanche_sync();
+    wrapper_avalanche_sync();
 }
