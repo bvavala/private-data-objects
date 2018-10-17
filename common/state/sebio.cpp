@@ -152,7 +152,6 @@ state_status_t sebio_fetch_from_block_store(
     ByteArray baBlockId(block_id, block_id + block_id_size);
     ByteArray baBlock(tas_block_address, tas_block_address + tas_block_size);
     ByteArray computedId = pdo::crypto::ComputeMessageHash(baBlock);
-    ByteArray decryptedState;
 
     if(baBlockId != computedId) {
         free(tas_block_address);
@@ -168,6 +167,7 @@ state_status_t sebio_fetch_from_block_store(
         case SEBIO_AES_GCM: {
             pdo::error::ThrowIf<pdo::error::RuntimeError>( 
                     sebio_ctx.crypto_algo != crypto_algo, "sebio_fetch, crypto-algo does not match");
+            ByteArray decryptedState;
             decryptedState = pdo::crypto::skenc::DecryptMessage(sebio_ctx.key, baBlock);
             free(tas_block_address);
             tas_block_size = decryptedState.size();

@@ -40,11 +40,14 @@ namespace pdo
             pdo::state::StateBlock& GetBlock();
             
             void AppendChild(pdo::state::StateNode& childNode);
+            void AppendChildId(StateBlockId& childId);
             void SetHasParent();
             void BlockifyChildren();
             void UnBlockifyChildren();
             pdo::state::StateBlockIdRefArray GetChildrenBlocks();
-            pdo::state::StateBlockId* LookupChild(pdo::state::StateBlockId& childId);
+            pdo::state::StateBlockIdRef LookupChild(pdo::state::StateBlockId& childId);
+            pdo::state::StateBlockIdRef LookupChildiByIndex(unsigned int index);
+            void ClearChildren();
         };
 
         typedef pdo::state::StateNode State;
