@@ -28,8 +28,8 @@ typedef struct {
     size_t block_size;
 } cached_block_t;
 
-#define AVALANCHE_CACHE_SIZE 1024
-cached_block_t untrusted_cache_cache[AVALANCHE_CACHE_SIZE];
+#define UNTRUSTED_CACHE_SIZE 1024
+cached_block_t untrusted_cache_cache[UNTRUSTED_CACHE_SIZE];
 unsigned int filled_spots = 0;
 
 //########################################################
@@ -58,7 +58,7 @@ void untrusted_cache_wheretoget(
     if(!filled_spots)
         __init();
 
-    pdo::Log(PDO_LOG_DEBUG, "Avalanche_Get find %s\n",
+    pdo::Log(PDO_LOG_DEBUG, "Untrusted_Cache_Get find %s\n",
         pdo::BinaryToHexString(block_authentication_id, block_authentication_id_size).c_str());
     
     *address = NULL;
@@ -66,7 +66,7 @@ void untrusted_cache_wheretoget(
     void* block_at = NULL;
     size_t bsize = 0;
     int i;
-    for(i=0; i<AVALANCHE_CACHE_SIZE; i++) {
+    for(i=0; i<UNTRUSTED_CACHE_SIZE; i++) {
         if(untrusted_cache_cache[i].unavailable &&
             untrusted_cache_cache[i].block &&
             block_authentication_id_size == untrusted_cache_cache[i].key_size &&
@@ -74,7 +74,7 @@ void untrusted_cache_wheretoget(
             block_at = (void*)untrusted_cache_cache[i].block;
             bsize = untrusted_cache_cache[i].block_size;
             //string block_key_hex = pdo::BinaryToHexString(untrusted_cache_cache[i].block, untrusted_cache_cache[i].block_size);
-            pdo::Log(PDO_LOG_DEBUG, "Avalanche_Get: index %d size %lu\n", i, untrusted_cache_cache[i].block_size);
+            pdo::Log(PDO_LOG_DEBUG, "Untrusted_Cache_Get: index %d size %lu\n", i, untrusted_cache_cache[i].block_size);
             break;
         }
     }
@@ -93,13 +93,13 @@ void untrusted_cache_wheretoput(size_t block_size, uint8_t** address) {
     if(!filled_spots)
         __init();
     *address = NULL;
-    if(filled_spots == AVALANCHE_CACHE_SIZE) {
+    if(filled_spots == UNTRUSTED_CACHE_SIZE) {
         pdo::Log(PDO_LOG_ERROR, "Cache is full\n");
         return;
     }
     //find first avialable cache entry
     int i;
-    for(i=0; i<AVALANCHE_CACHE_SIZE; i++) {
+    for(i=0; i<UNTRUSTED_CACHE_SIZE; i++) {
         if(!untrusted_cache_cache[i].unavailable)
             break;
     }
@@ -112,7 +112,7 @@ void untrusted_cache_wheretoput(size_t block_size, uint8_t** address) {
     filled_spots ++;
     //zero the block
     memset(untrusted_cache_cache[i].block, '\0', block_size);
-    pdo::Log(PDO_LOG_DEBUG, "Avalanche_Put: %d bytes allocated at %x\n",
+    pdo::Log(PDO_LOG_DEBUG, "Untrusted_Cache_Put: %d bytes allocated at %x\n",
         untrusted_cache_cache[i].block_size, untrusted_cache_cache[i].block);
 
     //return address to block
@@ -125,7 +125,7 @@ The sync operation is essentially used to signal that the data has been copied i
 void untrusted_cache_sync() {
     //update all cached blocks with zero bytes key, by computing the key
     int i;
-    for(i=0; i<AVALANCHE_CACHE_SIZE; i++) {
+    for(i=0; i<UNTRUSTED_CACHE_SIZE; i++) {
         if(untrusted_cache_cache[i].unavailable && untrusted_cache_cache[i].key_size == 0) {
             ByteArray block;
             block.assign(
@@ -135,7 +135,7 @@ void untrusted_cache_sync() {
             untrusted_cache_cache[i].key = (uint8_t*)malloc(block_hash.size());
             memcpy(untrusted_cache_cache[i].key, block_hash.data(), block_hash.size());
             untrusted_cache_cache[i].key_size = block_hash.size(); 
-            pdo::Log(PDO_LOG_DEBUG, "Avalanche_sync (block size %lu): %s\n",
+            pdo::Log(PDO_LOG_DEBUG, "Untrusted_Cache_sync (block size %lu): %s\n",
                 untrusted_cache_cache[i].block_size, ByteArrayToHexEncodedString(block_hash).c_str());
         }
     }

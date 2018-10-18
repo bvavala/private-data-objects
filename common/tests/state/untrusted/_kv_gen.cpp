@@ -45,7 +45,7 @@ void _kv_get(std::string key, std::string expected_value) {
             SAFE_LOG(PDO_LOG_INFO, "WEIRD: the byte arrays are the same!!!!\n");
         }
         else{
-            SAFE_LOG(PDO_LOG_INFO, "ERROR: byte arrays differ too (sizes %u %u)\n", baExpectedValue.size(), baValue.size());
+            SAFE_LOG(PDO_LOG_INFO, "ERROR: byte arrays differ too (sizes %lu %lu)\n", baExpectedValue.size(), baValue.size());
             SAFE_LOG(PDO_LOG_INFO, "retrieved: %s\n", ByteArrayToHexEncodedString(baValue).c_str());
             SAFE_LOG(PDO_LOG_INFO, "expected : %s\n", ByteArrayToHexEncodedString(baExpectedValue).c_str());
         }
