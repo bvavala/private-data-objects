@@ -55,7 +55,7 @@ class pstate::data_node {
         }
 
         unsigned int offset_size() {
-            return 2*sizeof(unsigned int);
+            return sizeof(unsigned int) + sizeof(unsigned int);
         }
         
     public:
@@ -66,9 +66,10 @@ class pstate::data_node {
             ba_block_num.insert(ba_block_num.end(), ba_off_from_start.begin(), ba_off_from_start.end());
             return ba_block_num;            
         }
+
         data_node(unsigned int block_num) {
             block_num_ = block_num;
-            free_bytes_ = FIXED_DATA_NODE_BYTE_SIZE - sizeof(unsigned int) -sizeof(unsigned int);
+            free_bytes_ = FIXED_DATA_NODE_BYTE_SIZE - sizeof(unsigned int) - sizeof(unsigned int);
             data_.resize(FIXED_DATA_NODE_BYTE_SIZE);
         }
 
@@ -137,12 +138,14 @@ class pstate::data_node {
 
             //write as much buffer as possible
             unsigned int bytes_to_write = (free_bytes_ > buffer.size() ? buffer.size() : free_bytes_);
+            SAFE_LOG(PDO_LOG_DEBUG, "before write: free bytes %u, bytes left to write %u, written bytes %u", free_bytes_, buffer.size(), bytes_to_write);
             std::copy(buffer.begin(), buffer.begin() + bytes_to_write, data_.begin() + cursor);
             free_bytes_ -= bytes_to_write;
             
             //erase written bytes from original buffer
             //(if there are some left, another write will be necessary, using the continue_writing flag)
             buffer.erase(buffer.begin(), buffer.begin() + bytes_to_write);
+            SAFE_LOG(PDO_LOG_DEBUG, "after write: free bytes %u, bytes left to write %u, written bytes %u", free_bytes_, buffer.size(), bytes_to_write);
             
             //return the offset
             SAFE_LOG(PDO_LOG_DEBUG, "write returning offset: %u %u", offset_to_block_num(retOffset), offset_to_bytes_off(retOffset));
@@ -162,22 +165,23 @@ class pstate::data_node {
                 cursor = offset_to_bytes_off(offset);
                 //read the buffer size
                 ByteArray ba_buffer_size(data_.begin() + cursor, data_.begin() + cursor + sizeof(size_t));
-                SAFE_LOG(PDO_LOG_DEBUG, "reading buffer size: %s", ByteArrayToHexEncodedString(ba_buffer_size).c_str());
                 cursor += sizeof(size_t);
                 size_t buffer_size = *((size_t*)ba_buffer_size.data());
-                SAFE_LOG(PDO_LOG_DEBUG, "read buffer size: %u", buffer_size);
                 //update the byte to read
                 total_bytes_to_read = buffer_size;
                 SAFE_LOG(PDO_LOG_DEBUG, "total_bytes_to_read: %u", total_bytes_to_read);
             }
 
             //read as much as possible in outbuffer
-            unsigned int bytes_to_read = (total_bytes_to_read < data_.size() - offset_size() ? total_bytes_to_read : data_.size() - offset_size());
+            unsigned int bytes_to_endof_data = data_.size() - cursor;
+            unsigned int bytes_to_read = (total_bytes_to_read < bytes_to_endof_data ? total_bytes_to_read : bytes_to_endof_data);
+            pdo::error::ThrowIf<pdo::error::ValueError>(
+                    bytes_to_read + cursor > data_.size(), "data node, bytes_to_read overflows");
             ByteArray d(data_.begin() + cursor, data_.begin() + cursor + bytes_to_read);
             outBuffer.insert(outBuffer.end(), d.begin(), d.end());
             //update to total bytes that are still left to read
             total_bytes_to_read -= bytes_to_read;
-            SAFE_LOG(PDO_LOG_DEBUG, "total_bytes_to_read still: %u", total_bytes_to_read);
+            SAFE_LOG(PDO_LOG_DEBUG, "current outbuffer size: %u; total_bytes_to_read still: %u", outBuffer.size(), total_bytes_to_read);
             return total_bytes_to_read; //if 0, read is complete, otherwise it must continue with the next data node
         }
 
@@ -190,19 +194,15 @@ class pstate::data_node {
             pdo::error::ThrowIf<pdo::error::ValueError>(
                 ret != STATE_SUCCESS, "data node load, sebio returned an error");
             ByteArray encrypted_buffer(block, block + block_size);
-            SAFE_LOG(PDO_LOG_DEBUG, "encrypted byffer size %u", encrypted_buffer.size());
-            SAFE_LOG(PDO_LOG_DEBUG, "state_encryption_key size %u", state_encryption_key.size());
             free(block); //allocated by sebio
             ByteArray decrypted_buffer = pdo::crypto::skenc::DecryptMessage(state_encryption_key, encrypted_buffer);
-            SAFE_LOG(PDO_LOG_DEBUG, "decrypted byffer size %u", decrypted_buffer.size());
+            SAFE_LOG(PDO_LOG_DEBUG, "encrypted and decrypted buffer size: %u %u", encrypted_buffer.size(), decrypted_buffer.size());
             deserialize_data(decrypted_buffer);
             deserialize_block_num_from_offset(decrypted_buffer);
         }
 
         pstate::StateBlockId unload(ByteArray state_encryption_key) {
             ByteArray b = serialize_data();
-            SAFE_LOG(PDO_LOG_DEBUG, "unloading data node, size %u", b.size());
-            SAFE_LOG(PDO_LOG_DEBUG, "encrypt data key size %u", state_encryption_key.size());
             ByteArray baEncryptedData = pdo::crypto::skenc::EncryptMessage(state_encryption_key, b);
             state_status_t ret = sebio_evict(baEncryptedData.data(), baEncryptedData.size(), SEBIO_NO_CRYPTO, originalEncryptedDataNodeId_);
             pdo::error::ThrowIf<pdo::error::ValueError>(
@@ -234,7 +234,6 @@ class pstate::kv_node {
             pstate::StateBlockId next_id = id_;
             for(int i=0; i<256; i++) { //children ids of kv node
                 next_level_ids_.push_back(next_id);
-                //SAFE_LOG(PDO_LOG_DEBUG, "init next_level_ids_(%u): %s", i, ByteArrayToHexEncodedString(next_level_ids_[i]).c_str());
             }
         }
 
@@ -260,7 +259,6 @@ class pstate::kv_node {
         void deserialize_next_level_ids(ByteArray& buffer) {
             next_level_ids_ = pstate::ByteArrayToStateBlockIdArray(buffer, STATE_BLOCK_ID_LENGTH);
             for(unsigned int i=0; i<next_level_ids_.size(); i++) {
-                //SAFE_LOG(PDO_LOG_DEBUG, "deserialized next_level_ids_(%u): %s", i, ByteArrayToHexEncodedString(next_level_ids_[i]).c_str());
             }
         }
 
@@ -276,10 +274,7 @@ class pstate::kv_node {
         }
         
         void set_next_level_id(unsigned int index, StateBlockId& id) {
-            SAFE_LOG(PDO_LOG_DEBUG, "prev %u next level id: %s", index, ByteArrayToHexEncodedString(next_level_ids_[index]).c_str());
             next_level_ids_[index] = id;
-            SAFE_LOG(PDO_LOG_DEBUG, "curr %u next level id: %s", index, ByteArrayToHexEncodedString(next_level_ids_[index]).c_str());
-            
         }
 
         void load(ByteArray state_encryption_key) {
@@ -297,7 +292,6 @@ class pstate::kv_node {
         }
 
         pstate::StateBlockId unload(ByteArray state_encryption_key) {
-            SAFE_LOG(PDO_LOG_DEBUG, "unloading kv node");
             ByteArray b = serialize_next_level_ids();
             ByteArray baEncryptedData = pdo::crypto::skenc::EncryptMessage(state_encryption_key, b);
             state_status_t ret = sebio_evict(baEncryptedData.data(), baEncryptedData.size(), SEBIO_NO_CRYPTO, id_);
@@ -366,7 +360,6 @@ pdo::state::State_KV::State_KV(ByteArray& id) : Basic_KV(id) {
 
 pdo::state::State_KV::State_KV(ByteArray& id, const ByteArray& key) : State_KV(id) {
     state_encryption_key_ = key;
-    SAFE_LOG(PDO_LOG_DEBUG, "statekv init keysize %u", state_encryption_key_.size());
 
     if(id.empty()) { //no id, create root
         SAFE_LOG(PDO_LOG_DEBUG, "statekv init: creating new state kv");
@@ -429,7 +422,6 @@ void pdo::state::State_KV::Uninit(ByteArray& outId) {
         outId = retId;
         delete rootNode_;
         rootNode_ = NULL;
-        SAFE_LOG(PDO_LOG_DEBUG, "unloaded root node");
     }
 }
 
@@ -453,22 +445,21 @@ void pdo::state::State_KV::operate(pstate::kv_node& search_kv_node, unsigned int
                 }
                 else {
                     pstate::data_node dn(0);
-                    //in last level kvnode the next level ids are offsets to the data nodes
+                    //in last level kvnode, the next level ids are offsets to the data nodes
                     ByteArray offset = data_node_id;
                     SAFE_LOG(PDO_LOG_DEBUG, "get, offset: %s", ByteArrayToHexEncodedString(offset).c_str());
                     dn.deserialize_block_num_from_offset(offset);
                     unsigned int data_block_num = dn.get_block_num();
-                    SAFE_LOG(PDO_LOG_DEBUG, "get, block num: %u", data_block_num);
                     data_node_id = get_datablock_id_from_datablock_num(data_block_num);
-                    SAFE_LOG(PDO_LOG_DEBUG, "get, data node id: %s", ByteArrayToHexEncodedString(data_node_id).c_str());
+                    SAFE_LOG(PDO_LOG_DEBUG, "get, block num: %u; data node id: %s", data_block_num, ByteArrayToHexEncodedString(data_node_id).c_str());
                     
                     dn.deserialize_original_encrypted_data_id(data_node_id);
                     dn.load(state_encryption_key_);
                     
                     unsigned int bytes_to_read = dn.read(offset, value, false, 0);
                     while(bytes_to_read > 0) {
-                        SAFE_LOG(PDO_LOG_DEBUG, "get, keep reading bytes: %u", bytes_to_read);
                         unsigned int next_data_block_num = dn.get_block_num() + 1;
+                        SAFE_LOG(PDO_LOG_DEBUG, "get, keep reading bytes: %u; next block num: %u", bytes_to_read, next_data_block_num);
                         pstate::StateBlockId next_data_node_id = get_datablock_id_from_datablock_num(next_data_block_num);
                         data_node dn(next_data_block_num);
                         dn.deserialize_original_encrypted_data_id(next_data_node_id);
@@ -504,6 +495,7 @@ void pdo::state::State_KV::operate(pstate::kv_node& search_kv_node, unsigned int
                     dn.write(value_copy, true);
                     pdo::error::ThrowIf<pdo::error::ValueError>(
                         dn.enough_space_available(true) && value_copy.size() > 0, "operate, unwritten bytes while there is free space");
+                    //track whether the data node has space for a future key-value write (used later)
                     last_data_node_has_enough_space = dn.enough_space_available(false);
                     pstate::StateBlockId new_data_node_id = dn.unload(state_encryption_key_);
                     add_datablock_id(new_data_node_id);
@@ -529,7 +521,7 @@ void pdo::state::State_KV::operate(pstate::kv_node& search_kv_node, unsigned int
                 return;
             }
             default: {
-                SAFE_LOG(PDO_LOG_ERROR, "operation %u unimplememnted", operation);
+                SAFE_LOG(PDO_LOG_ERROR, "operation %u unimplemented", operation);
                 throw pdo::error::ValueError("kv operation unimplemented");
             }                
         }
@@ -544,14 +536,12 @@ void pdo::state::State_KV::operate(pstate::kv_node& search_kv_node, unsigned int
             operate(new_kv_node, operation, kvkey, value);
             pstate::StateBlockId new_kv_node_id = new_kv_node.unload(state_encryption_key_);
             if(new_kv_node_id != old_kv_node_id) {
-                SAFE_LOG(PDO_LOG_DEBUG, "old kvnode id: %s", ByteArrayToHexEncodedString(old_kv_node_id).c_str());
-                SAFE_LOG(PDO_LOG_DEBUG, "new kvnode id: %s", ByteArrayToHexEncodedString(new_kv_node_id).c_str());
                 search_kv_node.set_next_level_id(next_level_index, new_kv_node_id);
                 update_block_id(old_kv_node_id, new_kv_node_id);
             }
-            else {
-                SAFE_LOG(PDO_LOG_DEBUG, "unchanged kvnode id: %s", ByteArrayToHexEncodedString(old_kv_node_id).c_str());
-            }
+            SAFE_LOG(PDO_LOG_DEBUG, "kvnode id: %s --> %s",
+                ByteArrayToHexEncodedString(old_kv_node_id).c_str(),
+                ByteArrayToHexEncodedString(new_kv_node_id).c_str());
             return;
         }
         else { // next kv node id does NOT exists
@@ -593,7 +583,6 @@ ByteArray pdo::state::State_KV::Get(ByteArray& key) {
 
 void pdo::state::State_KV::Put(ByteArray& key, ByteArray& value) {
     //hash the key and the first 32/64 bits
-    SAFE_LOG(PDO_LOG_DEBUG, "state_kv, put value");
     ByteArray kvkey = to_kvkey(key);
 
     //initialize search root kv node

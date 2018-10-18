@@ -25,7 +25,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TESTS_OUTPUT_DIR})
 SET(UNTRUSTED_TEST_NAME u_state_test)
 PROJECT(${UNTRUSTED_TEST_NAME} CXX)
 
-ADD_EXECUTABLE(${UNTRUSTED_TEST_NAME} untrusted/test.cpp untrusted/test_kv.cpp untrusted/test_biox.cpp untrusted/test_sal.cpp ${PDO_TOP_DIR}/eservice/pdo/eservice/enclave/enclave/state/untrusted_cache.cpp ${PDO_TOP_DIR}/eservice/pdo/eservice/enclave/log.cpp)
+ADD_EXECUTABLE(${UNTRUSTED_TEST_NAME} untrusted/test.cpp untrusted/test_serial_kv.cpp untrusted/test_state_kv.cpp untrusted/test_biox.cpp untrusted/test_sal.cpp ${PDO_TOP_DIR}/eservice/pdo/eservice/enclave/enclave/state/untrusted_cache.cpp untrusted/log.cpp untrusted/_kv_gen.cpp)
 
 # Same compile options as untrusted library
 TARGET_INCLUDE_DIRECTORIES(${UNTRUSTED_TEST_NAME} PUBLIC ${SGX_SDK}/include)
@@ -42,7 +42,7 @@ TARGET_COMPILE_OPTIONS(${UNTRUSTED_TEST_NAME} PRIVATE ${COMMON_CXX_FLAGS})
 TARGET_COMPILE_DEFINITIONS(${UNTRUSTED_TEST_NAME} PRIVATE "-D_UNTRUSTED_=1")
 
 # Link the untrusted test application against the untrusted library and openssl
-TARGET_LINK_LIBRARIES(${UNTRUSTED_TEST_NAME} ${UNTRUSTED_LIB_NAME} ${OPENSSL_LDFLAGS})
+TARGET_LINK_LIBRARIES(${UNTRUSTED_TEST_NAME} ${UNTRUSTED_LIB_NAME} ${OPENSSL_LDFLAGS} -lpthread)
 
 # Register this application as a test
 add_test(

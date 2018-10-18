@@ -19,6 +19,7 @@
 #include <string>
 #include "sal.h"
 #include "error.h"
+#include "_kv_gen.h"
 
 #if _UNTRUSTED_ == 1
     #include <stdio.h>
@@ -27,7 +28,9 @@
     #define SAFE_LOG(LEVEL, FMT, ...)
 #endif // __UNTRUSTED__
 
+extern pdo::state::Basic_KV* kv_;
 
+/*
 //the test generates 10^TEST_KEY_LENGTH keys
 #define TEST_KEY_LENGTH 2 
 
@@ -73,8 +76,8 @@ void _test_kv_put() {
 void _test_kv_get() {
     _kv_generator("", TEST_KEY_LENGTH, _kv_get);
 }
-
-void test_kv() {
+*/
+void test_serial_kv() {
     SAFE_LOG(PDO_LOG_INFO, "init SAL\n");
     g_sal.init(*(new ByteArray()));
 
@@ -102,14 +105,20 @@ void test_kv() {
         kv_ = new pdo::state::Serial_KV(id);
         SAFE_LOG(PDO_LOG_INFO, "start Get generator\n");
         _test_kv_get();
+        bool exception_caught = false;
         try
         {
             //this should fail
-            _kv_get("bruno", "bruno");
+            _kv_get("this key does not exist", "pdo");
         }
         catch(...)
         {
             SAFE_LOG(PDO_LOG_INFO, "expected exception, key not found\n");
+            exception_caught = true;
+        }
+        if(! exception_caught) {
+            SAFE_LOG(PDO_LOG_ERROR, "exception not caught\n");
+            throw;
         }
         kv_->Uninit(id);
         SAFE_LOG(PDO_LOG_ERROR, "uninit, KV id: %s\n", ByteArrayToHexEncodedString(id).c_str());
@@ -118,6 +127,24 @@ void test_kv() {
     catch (...)
     {
         SAFE_LOG(PDO_LOG_ERROR, "error testing KV Get operation");
+        throw;
+    }
+
+    try
+    {
+        SAFE_LOG(PDO_LOG_INFO, "reopen KV store, id: %s\n", ByteArrayToHexEncodedString(id).c_str());
+        kv_ = new pdo::state::Serial_KV(id);
+        SAFE_LOG(PDO_LOG_INFO, "start big value test\n");
+        std::string big_string(512000, 'a');
+        _kv_put("big_string", big_string.c_str());
+        _kv_get("big_string", big_string.c_str());
+        kv_->Uninit(id);
+        SAFE_LOG(PDO_LOG_ERROR, "uninit, KV id: %s\n", ByteArrayToHexEncodedString(id).c_str());
+        delete kv_;
+    }
+    catch (...)
+    {
+        SAFE_LOG(PDO_LOG_ERROR, "error testing KV Put operation on big value");
         throw;
     }
 

@@ -13,8 +13,10 @@
  * limitations under the License.
  */
 
+#include "sebio.h"
 #include "sal.h"
 #include "error.h"
+#include "packages/block_store/block_store.h"
 
 #if _UNTRUSTED_ == 1
     #include <stdio.h>
@@ -23,14 +25,19 @@
     #define SAFE_LOG(LEVEL, FMT, ...)
 #endif // __UNTRUSTED__
 
+namespace pstate = pdo::state;
 
 void test_sal() {
     SAFE_LOG(PDO_LOG_INFO, "******************** test_sal *******************\n");
     state_status_t ret;
     void *h;
     ByteArray s = {'c', 'i', 'a', 'o'};
-    StateBlockId id;
-    StateBlockId sal_id;
+    pstate::StateBlockId id;
+    pstate::StateBlockId sal_id;
+
+    ByteArray state_encryption_key_(16, 0);
+    sebio_set({state_encryption_key_, SEBIO_AES_GCM, NULL, NULL});
+    pdo::block_store::BlockStoreInit();
 
     pdo::state::sal SAL;
     SAFE_LOG(PDO_LOG_INFO, "Creating new SAL\n");
@@ -40,13 +47,14 @@ void test_sal() {
     ret = SAL.open(*new ByteArray(), &h);
     pdo::error::ThrowIf<pdo::error::RuntimeError>(
         ret != STATE_SUCCESS, "error opening/creating\n");
-    
+    SAFE_LOG(PDO_LOG_INFO, "Created, now writing\n");
     int i;
     for(i=0; i<10; i++) {
         ret = SAL.write(h, s);        
         pdo::error::ThrowIf<pdo::error::RuntimeError>(
             ret != STATE_SUCCESS, "error writing\n");
     }
+    SAFE_LOG(PDO_LOG_INFO, "Write done, now closing\n");
     ret = SAL.close(&h, &id);
     pdo::error::ThrowIf<pdo::error::RuntimeError>(
             ret != STATE_SUCCESS, "error closing\n");
@@ -61,7 +69,7 @@ void test_sal() {
     SAFE_LOG(PDO_LOG_INFO, "SAL reinit\n");
     pdo::state::sal NSAL;
     NSAL.init(sal_id);
-    StateBlockId n_id;
+    pstate::StateBlockId n_id;
     ret = NSAL.uninit(&n_id);
     pdo::error::ThrowIf<pdo::error::RuntimeError>(
             ret != STATE_SUCCESS, "error uninit\n");
@@ -97,8 +105,8 @@ void test_sal() {
             SAFE_LOG(PDO_LOG_ERROR, "error reading data\n");
         }
     }
-    StateBlockId new_id;
-    StateBlockId new_sal_id;
+    pstate::StateBlockId new_id;
+    pstate::StateBlockId new_sal_id;
     ret = NEWSAL.close(&h, &new_id);
     pdo::error::ThrowIf<pdo::error::RuntimeError>(
             ret != STATE_SUCCESS, "error closing\n");

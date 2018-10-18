@@ -17,7 +17,8 @@
 
 #include "test_biox.h"
 #include "test_sal.h"
-#include "test_kv.h"
+#include "test_serial_kv.h"
+#include "test_state_kv.h"
 
 /* Application entry */
 int main(int argc, char *argv[])
@@ -34,9 +35,13 @@ int main(int argc, char *argv[])
     test_sal();
     printf("Test SAL: end\n");
 
-    printf("Test KV: start\n");
-    test_kv();
-    printf("Test KV:end\n");
+    printf("Test Serial KV: start\n");
+    test_serial_kv();
+    printf("Test Serial KV:end\n");
+
+    printf("Test State KV: start\n");
+    test_state_kv();
+    printf("Test State KV:end\n");
 
     if (result != 0)
     {
