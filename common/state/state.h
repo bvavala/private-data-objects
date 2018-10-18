@@ -22,5 +22,6 @@
 #include "sebio.h"
 #include "basic_kv.h"
 #include "serial_kv.h"
+#include "state_kv.h"
 #include "state_status.h"
 #include "state_log.h"

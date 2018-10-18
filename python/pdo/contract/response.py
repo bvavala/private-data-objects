@@ -145,30 +145,18 @@ class ContractResponse(object) :
 
             #retrieve rest of state
             logger.debug('retrieving state blocks for %s', crypto.byte_array_to_hex(crypto.base64_to_byte_array(state_hash_b64)))
-            while True:
-                try :
-                    #the function raises an exception when it cannot complete
-                    ba_concatenated_block_ids = state.STATE_GetStateBlockList(crypto.base64_to_byte_array(state_hash_b64))
-                    break
-                except Exception as e :
-                    #TODO check exception is right one
-                    #logger.debug('exception %s', str(e))
-                    #get id of missing block
-                    ba_missing_block_id = state.STATE_GetMissingBlockId()
-                    if ba_missing_block_id is None:
-                        raise Exception('error, missing block id is empty')
-                    logger.debug('exception caught for missing block %s', crypto.byte_array_to_hex(ba_missing_block_id))
-                    #retrieve missing block from eservice
-                    b64_missing_block_id = crypto.byte_array_to_base64(ba_missing_block_id)
-                    b64_block = self.enclave_service.block_store_get(b64_missing_block_id)
-                    if b64_block is None:
+            string_main_state_block = crypto.byte_array_to_string(crypto.base64_to_byte_array(encrypted_state_u_b64))
+            string_main_state_block = string_main_state_block.rstrip('\0')
+            logger.debug("json blob in main state block: %s", string_main_state_block)
+            json_main_state_block = json.loads(string_main_state_block)
+            for hex_str_block_id in json_main_state_block['BlockIds']:
+                logger.debug("block id: %s", hex_str_block_id)
+                b64_block_id = crypto.byte_array_to_base64(crypto.hex_to_byte_array(hex_str_block_id))
+                b64_block = self.enclave_service.block_store_get(b64_block_id)
+                if b64_block is None:
                         raise Exception('Unable to retrieve block from EService')
-                    state.STATE_WarmUpCache(b64_missing_block_id, b64_block)
-                    contractstate_block = ContractState(request.contract_id, b64_block)
-                    contractstate_block.save_to_cache() 
-
-            state.STATE_ClearCache()
-            #TODO: check how to take advantage of keeping cache warm
+                contractstate_block = ContractState(request.contract_id, b64_block)
+                contractstate_block.save_to_cache()
 
     # -------------------------------------------------------
     def __verify_enclave_signature(self, enclave_keys) :

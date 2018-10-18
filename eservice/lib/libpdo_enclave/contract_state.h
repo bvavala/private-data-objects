@@ -20,6 +20,7 @@
 #include "crypto.h"
 #include "parson.h"
 
+#include "interpreter_kv.h"
 #include "state.h"
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -35,13 +36,15 @@ protected:
 public:
     pstate::StateBlockId state_hash_ = {};
     pstate::StateBlockId contract_kv_hash_ = {};
+    pstate::Interpreter_KV* kv_;
 
     ContractState(void){};
 
     ContractState(const ByteArray& state_encryption_key_,
         const ByteArray& newstate,
         const ByteArray& id_hash,
-        const ByteArray& code_hash);
+        const ByteArray& code_hash,
+        pstate::Interpreter_KV* kv);
 
     void Unpack(const ByteArray& state_encryption_key_,
         const JSON_Object* object,

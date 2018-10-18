@@ -35,7 +35,6 @@
 
 #include "enclave_t.h"
 
-#include "wrapper_ocall_BlockStore.h"
 #include "interpreter_kv.h"
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 //
@@ -66,15 +65,10 @@
 ContractState::ContractState(const ByteArray& state_encryption_key_,
     const ByteArray& newstate,
     const ByteArray& id_hash,
-    const ByteArray& code_hash)
+    const ByteArray& code_hash,
+    pdo::state::Interpreter_KV* kv)
 {
-    pdo::error::ThrowIf<pdo::error::RuntimeError>(
-        !g_sal.initialized(), "SAL not initialized before uninit");
-    //uninitialize State Abstraction Layer and get the id
-    state_status_t ret;
-    ret = g_sal.uninit(&state_hash_);
-    pdo::error::ThrowIf<pdo::error::ValueError>(
-        ret != STATE_SUCCESS, "sal uninit error");
+    kv->Uninit(state_hash_);
     contract_kv_hash_ = {};
     SAFE_LOG(PDO_LOG_DEBUG, "state hash: %s\n", ByteArrayToHexEncodedString(state_hash_).c_str());
 }
@@ -83,8 +77,6 @@ ContractState::ContractState(const ByteArray& state_encryption_key_,
 ByteArray ContractState::ComputeHash(void) const
 {
     //make sure sal has been uninitialized, so to have the latest state hash
-    pdo::error::ThrowIf<pdo::error::RuntimeError>(
-        g_sal.initialized(), "SAL still initialized before taking hash, SAL uninit needed");
     return state_hash_;
 }
 
@@ -105,71 +97,47 @@ void ContractState::Unpack(const ByteArray& state_encryption_key_,
         if (pvalue != NULL && pvalue[0] != '\0')
         {
             state_hash_ = base64_decode(pvalue);
-
-            {//initialize SAL from state root hash
-                pdo::error::ThrowIf<pdo::error::RuntimeError>(
-                    state_hash_.size() == 0, "state hash is empty");
-                sebio_set({state_encryption_key_, SEBIO_AES_GCM, NULL, NULL});
-
-                g_sal.init(state_hash_);
-                pstate::StateBlockIdRefArray list = g_sal.list();
-                //expect 1 item, (i) the contract kv data
-                pdo::error::ThrowIf<pdo::error::RuntimeError>(
-                    list.size() != 1, "sal has not 1 item");
-                contract_kv_hash_ = *list[0];
-                //check values in kv
-                pstate::Interpreter_KV contract_kv(contract_kv_hash_);
-                {
-                    std::string str = "IdHash";
-                    ByteArray k(str.begin(), str.end());
-                    pdo::error::ThrowIf<pdo::error::ValueError>(
-                        id_hash != contract_kv.Get(k), "invalid encrypted state; contract id mismatch");
-                }
-                {
-                    std::string str = "CodeHash";
-                    ByteArray k(str.begin(), str.end());
-                    pdo::error::ThrowIf<pdo::error::ValueError>(
-                        code_hash != contract_kv.Get(k), "invalid encrypted state; contract code mismatch");
-                }
-                contract_kv.Uninit(contract_kv_hash_);
-             }
-             //keep SAL open
+            kv_ = new pdo::state::Interpreter_KV(state_hash_, state_encryption_key_);
+            {
+                std::string str = "IdHash";
+                ByteArray k(str.begin(), str.end());
+                pdo::error::ThrowIf<pdo::error::ValueError>(
+                    id_hash != kv_->Get(k), "invalid encrypted state; contract id mismatch");
+            }
+            {
+                std::string str = "CodeHash";
+                ByteArray k(str.begin(), str.end());
+                pdo::error::ThrowIf<pdo::error::ValueError>(
+                    code_hash != kv_->Get(k), "invalid encrypted state; contract code mismatch");
+            }
+            //leave kv initialized
         }
         else
         {
             SAFE_LOG(PDO_LOG_DEBUG, "No state to unpack\n");
             /* here the initial state is created */
-            //initialize sebio
-            sebio_set({state_encryption_key_, SEBIO_AES_GCM});
             ByteArray emptyId;
-            g_sal.init(emptyId);
-
-            {//create empty kv store data for contract interpreter
-                void *h;
-                state_status_t ret;
-                pstate::Interpreter_KV interpreter_kv(emptyId);
-                //WARNING: need to put at least one byte, otherwise encryption fails
-                {
-                    std::string str = "IdHash";
-                    ByteArray k(str.begin(), str.end());
-                    ByteArray v(id_hash);
-                    interpreter_kv.Put(k, v);
-                }
-                {
-                    std::string str = "CodeHash";
-                    ByteArray k(str.begin(), str.end());
-                    ByteArray v(code_hash);
-                    interpreter_kv.Put(k, v);
-                }
-                interpreter_kv.Uninit(contract_kv_hash_);
-                //keep SAL open
+            kv_ = new pdo::state::Interpreter_KV(emptyId, state_encryption_key_);
+            {
+                std::string str = "IdHash";
+                ByteArray k(str.begin(), str.end());
+                ByteArray v(id_hash);
+                kv_->Put(k, v);
             }
+            {
+                std::string str = "CodeHash";
+                ByteArray k(str.begin(), str.end());
+                ByteArray v(code_hash);
+                kv_->Put(k, v);
+            }
+            state_hash_ = ByteArray(STATE_BLOCK_ID_LENGTH, 0);
+            //leave kv initialized
         }
     }
     catch (...)
     {
         SAFE_LOG(PDO_LOG_ERROR, "unable to unpack contract state");
-        g_sal.uninit(&state_hash_);
+        kv_->Uninit(state_hash_);
         throw;
     }
 }

@@ -42,7 +42,8 @@ ContractResponse::ContractResponse(const ContractRequest& request,
     : contract_state_(request.state_encryption_key_,
           computed_state,
           Base64EncodedStringToByteArray(request.contract_id_),
-          request.contract_code_.ComputeHash()),
+          request.contract_code_.ComputeHash(),
+          request.contract_state_.kv_),
       dependencies_(dependencies)
 {
     SAFE_LOG(PDO_LOG_DEBUG, "generating response\n");

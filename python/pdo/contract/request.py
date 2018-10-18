@@ -101,39 +101,29 @@ class ContractRequest(object) :
 
                 #put rest of state in block store
                 logger.debug('Sending rest of state to EService')
-                while True:
-                    try :
-                        #the function raises an exception when it cannot complete
-                        ba_concatenated_block_ids = state.STATE_GetStateBlockList(crypto.base64_to_byte_array(state_hash_b64))
-                        break
-                    except Exception as e :
-                        #TODO check exception is right one
-                        #logger.debug('exception %s', str(e))
-                        #get id of missing block
-                        ba_missing_block_id = state.STATE_GetMissingBlockId()
-                        logger.debug('exception caught for missing block %s', crypto.byte_array_to_hex(ba_missing_block_id))
-                        if ba_missing_block_id is None:
-                            raise Exception('error, missing block id is empty')
-                        #retrieve missing block from cache
-                        b64_missing_block_id = crypto.byte_array_to_base64(ba_missing_block_id)
-                        cs_block = ContractState.read_from_cache(self.contract_id, b64_missing_block_id)
-                        b64_block = cs_block.encrypted_state
-                        if b64_block is None :
-                            raise Exception('Unable to retrieve block from cache, %s', b64_missing_block_id)
-                        state.STATE_WarmUpCache(b64_missing_block_id, b64_block)
-                        block_store_len = self.enclave_service.block_store_head(b64_missing_block_id)
-                        if block_store_len <= 0:
-                            # This block wasn't present in the block store of this enclave service - need to send it
-                            logger.debug("Block store did NOT contain block '%s' - sending it", b64_missing_block_id)
-                            ret = self.enclave_service.block_store_put(b64_missing_block_id, b64_block)
-                            if ret != True:
-                                logger.exception("block_store_put failed for state block %s -> %s", b64_missing_block_id, b64_block)   
-                                raise
+                #NOTICE: state_hash_b64 is the id of the self.contract_state.encrypted_state block
+                #           which contains the json array of the block ids of the state
+                string_main_state_block = crypto.byte_array_to_string(crypto.base64_to_byte_array(self.contract_state.encrypted_state))
+                string_main_state_block = string_main_state_block.rstrip('\0')
+                logger.debug("json blob in main state block: %s", string_main_state_block)
+                json_main_state_block = json.loads(string_main_state_block)
+                for hex_str_block_id in json_main_state_block['BlockIds']:
+                    logger.debug("block id: %s", hex_str_block_id)
+                    b64_block_id = crypto.byte_array_to_base64(crypto.hex_to_byte_array(hex_str_block_id))
+                    cs_block = ContractState.read_from_cache(self.contract_id, b64_block_id)
+                    b64_block = cs_block.encrypted_state
+                    if b64_block is None :
+                            raise Exception('Unable to retrieve block from cache, %s', b64_block_id)
+                    block_store_len = self.enclave_service.block_store_head(b64_block_id)
+                    if block_store_len <= 0:
+                        # This block wasn't present in the block store of this enclave service - need to send it
+                        logger.debug("Block store did NOT contain block '%s' - sending it", b64_block_id)
+                        ret = self.enclave_service.block_store_put(b64_block_id, b64_block)
+                        if ret != True:
+                            logger.exception("block_store_put failed for state block %s -> %s", b64_block_id, b64_block)
+                            raise
                         else:
-                            logger.debug("Block store DID contain block '%s' - skip send", b64_missing_block_id) 
-
-                state.STATE_ClearCache()
-                #TODO: check how to take advantage of keeping cache warm
+                            logger.debug("Block store DID contain block '%s' - skip send", b64_block_id)
 
             encoded_encrypted_response = self.enclave_service.send_to_contract(encrypted_session_key, encrypted_request)
             if encoded_encrypted_response == None:

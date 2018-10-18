@@ -28,6 +28,7 @@ namespace pdo
             Basic_KV* kv_;
         public:
             Interpreter_KV(ByteArray& id);
+            Interpreter_KV(ByteArray& id, const ByteArray& encryption_key);
             ~Interpreter_KV();
             void Uninit(ByteArray& id);
             ByteArray Get(ByteArray& key);

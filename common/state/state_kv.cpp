@@ -408,7 +408,6 @@ void pdo::state::State_KV::Uninit(ByteArray& outId) {
     SAFE_LOG(PDO_LOG_DEBUG, "Uninit State KV");
     StateBlockId retId;
     if(rootNode_ != NULL) { 
-        SAFE_LOG(PDO_LOG_DEBUG, "unloading root node");
         //serialize block ids
         serialize_block_ids();
         //evict root block

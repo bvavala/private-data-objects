@@ -14,24 +14,23 @@
  */
 
 #include "interpreter_kv.h"
-#include "basic_kv.h"
+#include "state.h"
 
-//TODO move the definition somewhere else
-#define PORTAGE_ON_MONKV
-
-#ifdef PORTAGE_ON_MONKV
-#include "serial_kv.h"
-#endif
 
 pdo::state::Interpreter_KV::Interpreter_KV(ByteArray& id) : Basic_KV(id) {
-#ifdef PORTAGE_ON_MONKV
-    Serial_KV* serial_kv = new pdo::state::Serial_KV(id);
-    kv_ = serial_kv;
-#endif
+}
+
+pdo::state::Interpreter_KV::Interpreter_KV(ByteArray& id, const ByteArray& encryption_key) : Interpreter_KV(id) {
+    ByteArray key = encryption_key;
+    State_KV* state_kv = new pdo::state::State_KV(id, key);
+    kv_ = state_kv;
 }
 
 pdo::state::Interpreter_KV::~Interpreter_KV() {
-    delete kv_;
+    if(kv_ != NULL) {
+        delete kv_;
+        kv_ = NULL;
+    }
 }
 
 void pdo::state::Interpreter_KV::Uninit(ByteArray& id) {

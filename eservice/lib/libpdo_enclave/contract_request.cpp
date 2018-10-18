@@ -166,19 +166,12 @@ ContractResponse ContractRequest::process_initialization_request(void)
         pdo::contracts::ContractState new_contract_state;
         std::map<string, string> dependencies;
 
-        //open the kv for the interpreter
         SAFE_LOG(PDO_LOG_DEBUG, "KV id before interpreter: %s\n",
-            ByteArrayToHexEncodedString(contract_state_.contract_kv_hash_).c_str());
-        pstate::Interpreter_KV contract_kv(contract_state_.contract_kv_hash_);
-        interpreter.set_contract_kv(&contract_kv);
+            ByteArrayToHexEncodedString(contract_state_.state_hash_).c_str());
+        interpreter.set_contract_kv(contract_state_.kv_);
 
         interpreter.create_initial_contract_state(
             contract_id_, creator_id_, code, msg, new_contract_state);
-
-        //close contract kv
-        contract_kv.Uninit(contract_state_.contract_kv_hash_);
-        SAFE_LOG(PDO_LOG_DEBUG, "KV id after interpreter: %s\n",
-            ByteArrayToHexEncodedString(contract_state_.contract_kv_hash_).c_str());
 
         ByteArray new_state(new_contract_state.State.begin(), new_contract_state.State.end());
         ContractResponse response(*this, dependencies, new_state, "");
@@ -272,19 +265,12 @@ ContractResponse ContractRequest::process_update_request(void)
         std::map<string, string> dependencies;
         std::string result;
 
-        //open the kv for the interpreter
-        SAFE_LOG(PDO_LOG_DEBUG, "KV id before interpreter (update op): %s\n",
-            ByteArrayToHexEncodedString(contract_state_.contract_kv_hash_).c_str());
-        pstate::Interpreter_KV contract_kv(contract_state_.contract_kv_hash_);
-        interpreter.set_contract_kv(&contract_kv);
+        SAFE_LOG(PDO_LOG_DEBUG, "KV id before interpreter: %s\n",
+            ByteArrayToHexEncodedString(contract_state_.state_hash_).c_str());
+        interpreter.set_contract_kv(contract_state_.kv_);
 
         interpreter.send_message_to_contract(contract_id_, creator_id_, code, msg,
             current_contract_state, new_contract_state, dependencies, result);
-
-        //close contract kv
-        contract_kv.Uninit(contract_state_.contract_kv_hash_);
-        SAFE_LOG(PDO_LOG_DEBUG, "KV id after interpreter (update op): %s\n",
-            ByteArrayToHexEncodedString(contract_state_.contract_kv_hash_).c_str());
 
         // check for operations that did not modify state
         if (new_contract_state.State.empty())
