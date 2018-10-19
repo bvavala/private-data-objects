@@ -35,7 +35,7 @@ class GipsyInterpreter : public pc::ContractInterpreter
 private:
     std::string error_msg_;
     scheme interpreter;
-    pdo::state::Basic_KV* contract_kv_ = NULL;
+    pdo::state::Basic_KV_Plus* contract_kv_ = NULL;
 
     // load functions with throw errors when unsuccessful
 
@@ -83,5 +83,5 @@ public:
 
     ~GipsyInterpreter(void);
 
-    void set_contract_kv(pdo::state::Basic_KV* contract_kv);
+    void set_contract_kv(pdo::state::Basic_KV_Plus* contract_kv);
 };

@@ -462,7 +462,7 @@ void GipsyInterpreter::create_initial_contract_state(
     std::string intrinsicStateString = "IntrinsicState";
     ByteArray k(intrinsicStateString.begin(), intrinsicStateString.end());
     ByteArray v(outContractState.State.begin(), outContractState.State.end());
-    contract_kv_->Put(k, v);
+    contract_kv_->PrivilegedPut(k, v);
 }
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -485,7 +485,7 @@ void GipsyInterpreter::send_message_to_contract(
     //Convention: we use the "IntrinsicState" key to store the value
     std::string intrinsicStateString = "IntrinsicState";
     ByteArray k(intrinsicStateString.begin(), intrinsicStateString.end());
-    ByteArray v = contract_kv_->Get(k);
+    ByteArray v = contract_kv_->PrivilegedGet(k);
     current_contract_state.State = ByteArrayToString(v);
     Log(PDO_LOG_DEBUG, "input intrinsic state: %s\n", current_contract_state.State.c_str());
 
@@ -533,12 +533,12 @@ void GipsyInterpreter::send_message_to_contract(
         //delete previous intrinsic state versions (needed when using fixed small state storage space)
         contract_kv_->Delete(k);
         ByteArray v(outContractState.State.begin(), outContractState.State.end());
-        contract_kv_->Put(k, v);
+        contract_kv_->PrivilegedPut(k, v);
 #ifdef DEBUG
         {//double check intrinsic state
             std::string is = "IntrinsicState";
             ByteArray isk(is.begin(), is.end());
-            ByteArray isv = contract_kv_->Get(k);
+            ByteArray isv = contract_kv_->PrivilegedGet(k);
             std::string isvs = ByteArrayToString(isv);
             Log(PDO_LOG_DEBUG, "(double check) output intrinsic state: %s\n", isvs.c_str());
             if(outContractState.State.compare(isvs) != 0) {
@@ -558,6 +558,6 @@ void GipsyInterpreter::send_message_to_contract(
 }
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-void GipsyInterpreter::set_contract_kv(pstate::Basic_KV* contract_kv) {
+void GipsyInterpreter::set_contract_kv(pstate::Basic_KV_Plus* contract_kv) {
     contract_kv_ = contract_kv;
 }

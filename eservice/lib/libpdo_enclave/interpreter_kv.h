@@ -22,7 +22,7 @@ namespace pdo
 {
     namespace state
     {
-        class Interpreter_KV : public Basic_KV
+        class Interpreter_KV : public Basic_KV_Plus
         {
         protected:
             Basic_KV* kv_;
@@ -34,6 +34,10 @@ namespace pdo
             ByteArray Get(ByteArray& key);
             void Put(ByteArray& key, ByteArray& value);
             void Delete(ByteArray& key);
+            void PrivilegedPut(ByteArray& key, ByteArray& value);
+            ByteArray PrivilegedGet(ByteArray& key);
+            void UnprivilegedPut(ByteArray& key, ByteArray& value);
+            ByteArray UnprivilegedGet(ByteArray& key);
         };
     }
 }

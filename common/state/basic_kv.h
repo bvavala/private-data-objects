@@ -33,5 +33,15 @@ namespace pdo
             virtual void Put(ByteArray& key, ByteArray& value) = 0;
             virtual void Delete(ByteArray& key) = 0;
         };
+
+        class Basic_KV_Plus : public Basic_KV
+        {
+        public:
+            Basic_KV_Plus(ByteArray& id) : Basic_KV(id) {}
+            virtual ByteArray PrivilegedGet(ByteArray& key) = 0;
+            virtual void PrivilegedPut(ByteArray& key, ByteArray& value) = 0;
+            virtual ByteArray UnprivilegedGet(ByteArray& key) = 0;
+            virtual void UnprivilegedPut(ByteArray& key, ByteArray& value) = 0;
+        };
     }
 }

@@ -102,13 +102,13 @@ void ContractState::Unpack(const ByteArray& state_encryption_key_,
                 std::string str = "IdHash";
                 ByteArray k(str.begin(), str.end());
                 pdo::error::ThrowIf<pdo::error::ValueError>(
-                    id_hash != kv_->Get(k), "invalid encrypted state; contract id mismatch");
+                    id_hash != kv_->PrivilegedGet(k), "invalid encrypted state; contract id mismatch");
             }
             {
                 std::string str = "CodeHash";
                 ByteArray k(str.begin(), str.end());
                 pdo::error::ThrowIf<pdo::error::ValueError>(
-                    code_hash != kv_->Get(k), "invalid encrypted state; contract code mismatch");
+                    code_hash != kv_->PrivilegedGet(k), "invalid encrypted state; contract code mismatch");
             }
             //leave kv initialized
         }
@@ -122,13 +122,13 @@ void ContractState::Unpack(const ByteArray& state_encryption_key_,
                 std::string str = "IdHash";
                 ByteArray k(str.begin(), str.end());
                 ByteArray v(id_hash);
-                kv_->Put(k, v);
+                kv_->PrivilegedPut(k, v);
             }
             {
                 std::string str = "CodeHash";
                 ByteArray k(str.begin(), str.end());
                 ByteArray v(code_hash);
-                kv_->Put(k, v);
+                kv_->PrivilegedPut(k, v);
             }
             state_hash_ = ByteArray(STATE_BLOCK_ID_LENGTH, 0);
             //leave kv initialized
