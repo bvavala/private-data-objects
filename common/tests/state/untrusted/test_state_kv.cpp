@@ -98,9 +98,15 @@ void test_state_kv() {
         pstate::State_KV skv(id, state_encryption_key_);
         kv_ = &skv;
         SAFE_LOG(PDO_LOG_INFO, "start big value test\n");
-        std::string big_string(3001, 'a');
-        _kv_put("big_string", big_string.c_str());
-        _kv_get("big_string", big_string.c_str());
+        for(int i=1; i<19; i++) {
+            size_t value_size = (1<<i);
+            std::string big_string(value_size, 'a');
+            std::string big_string_key("big_string");
+            big_string_key += std::to_string(i);
+            SAFE_LOG(PDO_LOG_INFO, "Testing put/get value size %u\n", value_size);
+            _kv_put(big_string_key, big_string);
+            _kv_get(big_string_key, big_string);
+        }
         kv_->Uninit(id);
         kv_ = NULL;
         SAFE_LOG(PDO_LOG_ERROR, "uninit, KV id: %s\n", ByteArrayToHexEncodedString(id).c_str());

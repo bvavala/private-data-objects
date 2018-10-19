@@ -32,7 +32,7 @@
     #define SAFE_LOG(LEVEL, FMT, ...)
 #endif // DEBUG
 
-#define FIXED_DATA_NODE_BYTE_SIZE 4096
+#define FIXED_DATA_NODE_BYTE_SIZE (1<<13) // 8 KB
 
 namespace pstate = pdo::state;
 
