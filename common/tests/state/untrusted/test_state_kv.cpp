@@ -103,7 +103,7 @@ void test_state_kv() {
             std::string big_string(value_size, 'a');
             std::string big_string_key("big_string");
             big_string_key += std::to_string(i);
-            SAFE_LOG(PDO_LOG_INFO, "Testing put/get value size %u\n", value_size);
+            SAFE_LOG(PDO_LOG_INFO, "Testing put/get value size %lu\n", value_size);
             _kv_put(big_string_key, big_string);
             _kv_get(big_string_key, big_string);
         }
