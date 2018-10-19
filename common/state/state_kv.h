@@ -32,6 +32,7 @@ namespace pdo
             pdo::state::StateBlockIdArray blockIds_ = {};
             ByteArray state_encryption_key_;
             unsigned int last_appended_data_block_num_;
+            size_t fixed_key_size_ = 0;
 
             ByteArray serialize_block_ids();
             void deserialize_block_ids();
@@ -44,11 +45,13 @@ namespace pdo
             pdo::state::StateBlockId get_last_datablock_id();
 
             ByteArray to_kvkey(ByteArray& key);
+            void error_on_wrong_key_size(size_t key_size);
             void operate(kv_node& search_kv_node, unsigned int operation, ByteArray& kvkey, ByteArray& value);
 
         public:
             State_KV(ByteArray& id);
             State_KV(ByteArray& id, const ByteArray& key);
+            State_KV(ByteArray& id, const ByteArray& key, const size_t fized_key_size);
             ~State_KV();
             void Uninit(ByteArray& id);
             ByteArray Get(ByteArray& key);

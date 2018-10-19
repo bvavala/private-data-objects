@@ -40,13 +40,13 @@ void test_state_kv() {
     ByteArray emptyId;
     SAFE_LOG(PDO_LOG_DEBUG, "statekv init empty state kv");
     ByteArray state_encryption_key_(16, 0);
-
+    size_t test_key_length = TEST_KEY_STRING_LENGTH;
     ByteArray id;
 
     try 
     {
         SAFE_LOG(PDO_LOG_INFO, "create empty KV store\n");
-        pstate::State_KV skv(emptyId, state_encryption_key_);
+        pstate::State_KV skv(emptyId, state_encryption_key_, test_key_length);
         kv_ = &skv;
         SAFE_LOG(PDO_LOG_INFO, "start Put generator\n");
         _test_kv_put();
@@ -63,7 +63,7 @@ void test_state_kv() {
     try
     {
         SAFE_LOG(PDO_LOG_INFO, "reopen KV store, id: %s\n", ByteArrayToHexEncodedString(id).c_str());
-        pstate::State_KV skv(id, state_encryption_key_);
+        pstate::State_KV skv(id, state_encryption_key_, test_key_length);
         kv_ = &skv;
         SAFE_LOG(PDO_LOG_INFO, "start Get generator\n");
         _test_kv_get();
@@ -71,7 +71,8 @@ void test_state_kv() {
         try
         {
             //this should fail
-            _kv_get("this key does not exist", "pdo");
+            std::string missing_key(test_key_length, 'z');
+            _kv_get(missing_key, "this key does not exist");
         }
         catch(...)
         {
@@ -95,14 +96,14 @@ void test_state_kv() {
     try
     {
         SAFE_LOG(PDO_LOG_INFO, "reopen KV store, id: %s\n", ByteArrayToHexEncodedString(id).c_str());
-        pstate::State_KV skv(id, state_encryption_key_);
+        pstate::State_KV skv(id, state_encryption_key_, test_key_length);
         kv_ = &skv;
         SAFE_LOG(PDO_LOG_INFO, "start big value test\n");
         for(int i=1; i<19; i++) {
             size_t value_size = (1<<i);
             std::string big_string(value_size, 'a');
-            std::string big_string_key("big_string");
-            big_string_key += std::to_string(i);
+            std::string big_string_key = std::to_string(i);
+            big_string_key.insert(0, TEST_KEY_STRING_LENGTH - big_string_key.length(), '0');
             SAFE_LOG(PDO_LOG_INFO, "Testing put/get value size %lu\n", value_size);
             _kv_put(big_string_key, big_string);
             _kv_get(big_string_key, big_string);

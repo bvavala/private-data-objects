@@ -399,6 +399,10 @@ pdo::state::State_KV::State_KV(ByteArray& id, const ByteArray& key) : State_KV(i
     }
 }
 
+pdo::state::State_KV::State_KV(ByteArray& id, const ByteArray& key, const size_t fixed_key_size) : State_KV(id, key) {
+    fixed_key_size_ = fixed_key_size;
+}
+
 pdo::state::State_KV::~State_KV() {
     StateBlockId id;
     Uninit(id);
@@ -428,6 +432,11 @@ ByteArray pdo::state::State_KV::to_kvkey(ByteArray& key) {
     ByteArray kvKey = pdo::crypto::ComputeMessageHash(key);
     kvKey.resize(4);
     return kvKey;
+}
+
+void pdo::state::State_KV::error_on_wrong_key_size(size_t key_size) {
+    pdo::error::ThrowIf<pdo::error::ValueError>(
+        key_size != fixed_key_size_ && fixed_key_size_ > 0, "state kv error, using kv with different key size");
 }
 
 void pdo::state::State_KV::operate(pstate::kv_node& search_kv_node, unsigned int operation, ByteArray& kvkey, ByteArray& value) {
@@ -563,7 +572,7 @@ void pdo::state::State_KV::operate(pstate::kv_node& search_kv_node, unsigned int
 
 ByteArray pdo::state::State_KV::Get(ByteArray& key) {
     //hash the key and the first 32/64 bits
-    ByteArray kvkey = to_kvkey(key);
+    ByteArray kvkey = key;
     
     //initialize search root kv node
     StateBlockId search_kv_node_id = get_search_root_kvblock_id();
@@ -571,6 +580,7 @@ ByteArray pdo::state::State_KV::Get(ByteArray& key) {
 
     //perform operation
     ByteArray value;
+    error_on_wrong_key_size(kvkey.size());
     operate(search_kv_node, 0, kvkey, value);
 
     //update search root kv node
@@ -582,13 +592,14 @@ ByteArray pdo::state::State_KV::Get(ByteArray& key) {
 
 void pdo::state::State_KV::Put(ByteArray& key, ByteArray& value) {
     //hash the key and the first 32/64 bits
-    ByteArray kvkey = to_kvkey(key);
+    ByteArray kvkey = key;
 
     //initialize search root kv node
     StateBlockId search_kv_node_id = get_search_root_kvblock_id();
     kv_node search_kv_node(0, search_kv_node_id, state_encryption_key_);
 
     //perform operation
+    error_on_wrong_key_size(kvkey.size());
     operate(search_kv_node, 1, kvkey, value);
     
     //update search root kv node
@@ -597,7 +608,7 @@ void pdo::state::State_KV::Put(ByteArray& key, ByteArray& value) {
 }
 
 void pdo::state::State_KV::Delete(ByteArray& key) {
-    ByteArray kvkey = to_kvkey(key);
+    ByteArray kvkey = key;
 
     //initialize search root kv node
     StateBlockId search_kv_node_id = get_search_root_kvblock_id();
@@ -605,6 +616,7 @@ void pdo::state::State_KV::Delete(ByteArray& key) {
 
     //perform operation
     ByteArray value;
+    error_on_wrong_key_size(kvkey.size());
     operate(search_kv_node, 2, kvkey, value);
 
     //update search root kv node

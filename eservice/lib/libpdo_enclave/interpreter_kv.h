@@ -26,6 +26,9 @@ namespace pdo
         {
         protected:
             Basic_KV* kv_;
+
+            ByteArray to_kvkey(ByteArray&key);
+
         public:
             Interpreter_KV(ByteArray& id);
             Interpreter_KV(ByteArray& id, const ByteArray& encryption_key);

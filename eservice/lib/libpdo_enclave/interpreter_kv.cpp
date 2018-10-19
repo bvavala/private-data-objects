@@ -15,15 +15,23 @@
 
 #include "interpreter_kv.h"
 #include "state.h"
+#include "crypto.h"
 
+#define INTERPRETER_KV_KEY_SIZE_BYTES (SHA256_DIGEST_LENGTH /2) //16 bytes == 128bits
 
 pdo::state::Interpreter_KV::Interpreter_KV(ByteArray& id) : Basic_KV_Plus(id) {
 }
 
 pdo::state::Interpreter_KV::Interpreter_KV(ByteArray& id, const ByteArray& encryption_key) : Interpreter_KV(id) {
     ByteArray key = encryption_key;
-    State_KV* state_kv = new pdo::state::State_KV(id, key);
+    State_KV* state_kv = new pdo::state::State_KV(id, key, INTERPRETER_KV_KEY_SIZE_BYTES);
     kv_ = state_kv;
+}
+
+ByteArray pdo::state::Interpreter_KV::to_kvkey(ByteArray& key) {
+    ByteArray kvKey = pdo::crypto::ComputeMessageHash(key);
+    kvKey.resize(INTERPRETER_KV_KEY_SIZE_BYTES);
+    return kvKey;
 }
 
 pdo::state::Interpreter_KV::~Interpreter_KV() {
@@ -38,15 +46,18 @@ void pdo::state::Interpreter_KV::Uninit(ByteArray& id) {
 }
 
 ByteArray pdo::state::Interpreter_KV::Get(ByteArray& key) {
-    return kv_->Get(key);
+    ByteArray kvkey = to_kvkey(key);
+    return kv_->Get(kvkey);
 }
 
 void pdo::state::Interpreter_KV::Put(ByteArray& key, ByteArray& value) {
-    kv_->Put(key, value);
+    ByteArray kvkey = to_kvkey(key);
+    kv_->Put(kvkey, value);
 }
 
 void pdo::state::Interpreter_KV::Delete(ByteArray& key) {
-    kv_->Delete(key);
+    ByteArray kvkey = to_kvkey(key);
+    kv_->Delete(kvkey);
 }
 
 ByteArray to_privileged_key(ByteArray& key) {
@@ -65,20 +76,24 @@ ByteArray to_unprivileged_key(ByteArray& key) {
 
 ByteArray pdo::state::Interpreter_KV::PrivilegedGet(ByteArray& key) {
     ByteArray privileged_key = to_privileged_key(key);
-    return kv_->Get(privileged_key);
+    ByteArray kvkey = to_kvkey(privileged_key);
+    return kv_->Get(kvkey);
 }
 
 void pdo::state::Interpreter_KV::PrivilegedPut(ByteArray& key, ByteArray& value) {
     ByteArray privileged_key = to_privileged_key(key);
-    kv_->Put(privileged_key, value);
+    ByteArray kvkey = to_kvkey(privileged_key);
+    kv_->Put(kvkey, value);
 }
 
 ByteArray pdo::state::Interpreter_KV::UnprivilegedGet(ByteArray& key) {
     ByteArray unprivileged_key = to_unprivileged_key(key);
-    return kv_->Get(unprivileged_key);
+    ByteArray kvkey = to_kvkey(unprivileged_key);
+    return kv_->Get(kvkey);
 }
 
 void pdo::state::Interpreter_KV::UnprivilegedPut(ByteArray& key, ByteArray& value) {
     ByteArray unprivileged_key = to_unprivileged_key(key);
-    kv_->Put(unprivileged_key, value);
+    ByteArray kvkey = to_kvkey(unprivileged_key);
+    kv_->Put(kvkey, value);
 }

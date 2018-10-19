@@ -56,8 +56,8 @@ void _kv_get(std::string key, std::string expected_value) {
 }
 
 void _test_kv_put() {
-    _kv_generator("", TEST_KEY_LENGTH, _kv_put);
+    _kv_generator("", TEST_KEY_STRING_LENGTH, _kv_put);
 }
 void _test_kv_get() {
-    _kv_generator("", TEST_KEY_LENGTH, _kv_get);
+    _kv_generator("", TEST_KEY_STRING_LENGTH, _kv_get);
 }
