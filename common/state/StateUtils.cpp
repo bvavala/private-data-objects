@@ -19,7 +19,6 @@
 #include "jsonvalue.h"
 #include "parson.h"
 
-
 namespace pstate = pdo::state;
 
 #ifdef DEBUG

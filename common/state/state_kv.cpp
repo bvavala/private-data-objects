@@ -225,7 +225,6 @@ class pstate::kv_node {
             deserialize_id(id);
             load(state_encryption_key);
         }
-        
 
         void initialize(unsigned int depth) {
             //empty id
@@ -351,7 +350,6 @@ pstate::StateBlockId pdo::state::State_KV::get_search_root_kvblock_id() {
 pstate::StateBlockId pdo::state::State_KV::get_last_datablock_id() {
     return blockIds_[blockIds_.size() - 1];
 }
-
 
 //###########################################################################
 
