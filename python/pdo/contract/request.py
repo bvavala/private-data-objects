@@ -22,8 +22,6 @@ from pdo.contract.message import ContractMessage
 from pdo.contract.state import ContractState
 from pdo.submitter.submitter import Submitter
 
-import pdo.common.state.block_state as state
-
 import logging
 logger = logging.getLogger(__name__)
 

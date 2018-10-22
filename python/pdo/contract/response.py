@@ -21,8 +21,6 @@ from pdo.submitter.submitter import Submitter
 from pdo.contract.state import ContractState
 from sawtooth.helpers.pdo_connect import PdoRegistryHelper
 
-import pdo.common.state.block_state as state
-
 import logging
 logger = logging.getLogger(__name__)
 

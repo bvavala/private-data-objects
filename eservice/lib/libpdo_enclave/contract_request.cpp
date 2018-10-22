@@ -175,7 +175,6 @@ ContractResponse ContractRequest::process_initialization_request(void)
 
         ByteArray new_state(new_contract_state.State.begin(), new_contract_state.State.end());
         ContractResponse response(*this, dependencies, new_state, "");
-        SAFE_LOG(PDO_LOG_DEBUG, "returning response\n");
 
         return response;
     }

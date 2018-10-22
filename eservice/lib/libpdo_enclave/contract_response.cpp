@@ -46,8 +46,6 @@ ContractResponse::ContractResponse(const ContractRequest& request,
           request.contract_state_.kv_),
       dependencies_(dependencies)
 {
-    SAFE_LOG(PDO_LOG_DEBUG, "generating response\n");
-
     contract_id_ = request.contract_id_;
     creator_id_ = request.creator_id_;
     operation_succeeded_ = true;
@@ -58,14 +56,12 @@ ContractResponse::ContractResponse(const ContractRequest& request,
     channel_verifying_key_ = request.contract_message_.channel_verifying_key_;
     contract_initializing_ = request.is_initialize();
 
-    SAFE_LOG(PDO_LOG_DEBUG, "generating response\n");
-
     output_contract_state_hash_ = contract_state_.state_hash_;
     if (!contract_initializing_) {
         input_contract_state_hash_ = request.contract_state_.state_hash_;
-        SAFE_LOG(PDO_LOG_DEBUG, "input state hash: %s\n", ByteArrayToHexEncodedString(input_contract_state_hash_).c_str());
+        SAFE_LOG(PDO_LOG_DEBUG, "input state hash: %s", ByteArrayToHexEncodedString(input_contract_state_hash_).c_str());
     }
-    SAFE_LOG(PDO_LOG_DEBUG, "output state hash: %s\n", ByteArrayToHexEncodedString(output_contract_state_hash_).c_str());
+    SAFE_LOG(PDO_LOG_DEBUG, "output state hash: %s", ByteArrayToHexEncodedString(output_contract_state_hash_).c_str());
 
     result_ = result;
 }

@@ -36,6 +36,7 @@
 #include "enclave_t.h"
 
 #include "interpreter_kv.h"
+
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 //
 // contract state format
@@ -70,7 +71,7 @@ ContractState::ContractState(const ByteArray& state_encryption_key_,
 {
     kv->Uninit(state_hash_);
     contract_kv_hash_ = {};
-    SAFE_LOG(PDO_LOG_DEBUG, "state hash: %s\n", ByteArrayToHexEncodedString(state_hash_).c_str());
+    SAFE_LOG(PDO_LOG_DEBUG, "state hash: %s", ByteArrayToHexEncodedString(state_hash_).c_str());
 }
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -87,9 +88,6 @@ void ContractState::Unpack(const ByteArray& state_encryption_key_,
     const ByteArray& code_hash)
 {
     const char* pvalue;
-
-    pdo::error::ThrowIf<pdo::error::RuntimeError>(
-        g_sal.initialized(), "SAL already initialized before state unpacking");
 
     try
     {
@@ -114,7 +112,7 @@ void ContractState::Unpack(const ByteArray& state_encryption_key_,
         }
         else
         {
-            SAFE_LOG(PDO_LOG_DEBUG, "No state to unpack\n");
+            SAFE_LOG(PDO_LOG_DEBUG, "No state to unpack");
             /* here the initial state is created */
             ByteArray emptyId;
             kv_ = new pdo::state::Interpreter_KV(emptyId, state_encryption_key_);
