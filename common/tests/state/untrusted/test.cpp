@@ -20,7 +20,8 @@
 #include "test_state_kv.h"
 #include "log.h"
 
-#define TEST_DATABASE_NAME ("utest.mdb")
+#define TEST_DATABASE_FILE_NAME ("utest.mdb")
+#define TEST_DATABASE_LOCK_FILE_NAME ("utest.mdb-lock")
 
 /* Application entry */
 int main(int argc, char* argv[])
@@ -28,7 +29,7 @@ int main(int argc, char* argv[])
     int result = 0;
     pdo::Log(PDO_LOG_DEBUG, "Test UNTRUSTED State API.\n");
 
-    result = pdo::lmdb_block_store::BlockStoreInit(TEST_DATABASE_NAME);
+    result = pdo::lmdb_block_store::BlockStoreInit(TEST_DATABASE_FILE_NAME);
     if (result != 0)
     {
         pdo::Log(PDO_LOG_ERROR, "Failed to initialize block store: %d\n", result);
@@ -40,6 +41,9 @@ int main(int argc, char* argv[])
     pdo::Log(PDO_LOG_DEBUG, "Test State KV:end\n");
 
     pdo::lmdb_block_store::BlockStoreClose();
+
+    remove(TEST_DATABASE_FILE_NAME);
+    remove(TEST_DATABASE_LOCK_FILE_NAME);
 
     pdo::Log(PDO_LOG_DEBUG, "Test UNTRUSTED State API SUCCESSFUL!\n");
     return 0;
