@@ -176,10 +176,6 @@ pstate::block_offset_t* pstate::trie_node::goto_child_offset(trie_node_header_t*
 
 uint8_t* pstate::trie_node::goto_key_chunk(trie_node_header_t* header)
 {
-    if (header->keyChunkSize == 0)
-    {
-        return NULL;
-    }
     uint8_t* p = (uint8_t*)header;
     p += sizeof(trie_node_header_t);
     if (header->hasNext)
@@ -853,6 +849,13 @@ pstate::trie_node_header_t* pstate::data_node::write_trie_node(bool isDeleted,
         trie_node::goto_key_chunk(returnHeader));
     // consume written space
     free_bytes_ -= space_required;
+
+    //mark unwritten bytes as deleted trie node header
+    for(unsigned int i = (unsigned int)kcl; i<MAX_KEY_CHUNK_BYTE_SIZE; i++)
+    {
+        *(trie_node::goto_key_chunk(returnHeader) + i) = *((uint8_t*)&deleted_trie_header);
+    }
+
     return returnHeader;
 }
 
@@ -1253,13 +1256,12 @@ void pdo::state::State_KV::Finalize(ByteArray& outId)
 
 ByteArray pstate::State_KV::Get(const ByteArray& key)
 {
+    ByteArray value;
     try
     {
         // perform operation
-        ByteArray value;
         const ByteArray& kvkey = key;
         trie_node::operate_trie_root(dn_io_, GET_OP, kvkey, value);
-        return value;
     }
     catch (pdo::error::RuntimeError& e)
     {
@@ -1277,6 +1279,8 @@ ByteArray pstate::State_KV::Get(const ByteArray& key)
     {
         __on_error__("unknown exception in KV store during Get");
     }
+
+    return value;
 }
 
 void pstate::State_KV::Put(const ByteArray& key, const ByteArray& value)
