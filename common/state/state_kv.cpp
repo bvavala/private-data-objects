@@ -145,6 +145,88 @@ void pstate::cache_slots::release(data_node** dn)
     *dn = NULL;
 }
 
+bool pstate::free_space_collector::are_adjacent(const block_offset_t& bo1, const unsigned& length1, const block_offset_t& bo2)
+{
+    pdo::error::ThrowIf<pdo::error::RuntimeError>(bo1.block_num > bo2.block_num ||
+        (bo1.block_num == bo2.block_num && bo1.bytes > bo2.bytes),
+        "are_adjacent, bo1 is located after bo2");
+    block_offset_t bo = bo1;
+    unsigned int l = length1;
+    unsigned int block_data_len = pstate::data_node::data_end_index() - pstate::data_node::data_begin_index();
+    //advance as many blocks a possible
+    unsigned int blocks_to_add = l / block_data_len;
+    bo.block_num += blocks_to_add;
+    l -= (blocks_to_add * block_data_len);
+    //advance the bytes field
+    bo.bytes += l;
+    //correct the bo in case of overflow
+    if(bo.bytes >= pstate::data_node::data_end_index()) //if equal, there is no overflow, but need switch to next block
+    {
+        bo.block_num +=1;
+        bo.bytes = pstate::data_node::data_begin_index() + (bo.bytes - pstate::data_node::data_end_index());
+    }
+    SAFE_LOG(PDO_LOG_DEBUG, "bo1 blocknum %u bytes %d len %u", bo1.block_num, bo1.bytes, length1);
+    SAFE_LOG(PDO_LOG_DEBUG, "bo2 blocknum %u bytes %d", bo2.block_num, bo2.bytes);
+    SAFE_LOG(PDO_LOG_DEBUG, "bo  blocknum %u bytes %d", bo.block_num, bo.bytes);
+    return (bo == bo2);
+}
+
+void pstate::free_space_collector::collect(const block_offset_t& bo, const unsigned int& length)
+{
+    auto it = free_space_collection.begin();
+    while(1)
+    {
+        if(it == free_space_collection.end() || //if end of vector is reached
+            (bo.block_num < it->bo.block_num || //or the item location preceeds the current one, insert!
+            (bo.block_num == it->bo.block_num && bo.bytes < it->bo.bytes)))
+        {
+            //the bo should be placed at this point
+            free_space_item_t fsi = {bo, length};
+
+            //first check if it can merge with previous
+            if(it != free_space_collection.begin())
+            {
+                auto prev_it = std::prev(it);
+                if(are_adjacent(prev_it->bo, prev_it->length, fsi.bo))
+                {
+                    SAFE_LOG(PDO_LOG_DEBUG, "adjacent with prev, merge");
+                    //update item to be inserted
+                    fsi.bo = prev_it->bo;
+                    fsi.length += prev_it->length;
+                    //remove previous item
+                    it = free_space_collection.erase(prev_it);
+                }
+            }
+            //also, check if it can merge with current
+            if(it != free_space_collection.end() && are_adjacent(fsi.bo, fsi.length, it->bo))
+            {
+                SAFE_LOG(PDO_LOG_DEBUG, "adjacent with next, merge");
+                //item to be inserted is the same, just increase length
+                fsi.length += it->length;
+                it = free_space_collection.erase(it);
+            }
+            //any merge done, now insert
+            free_space_collection.insert(it, fsi);
+            break;
+        }
+
+        //no insert, go to next
+        it++;
+    }
+
+    //dump table
+    for(auto it = free_space_collection.begin(); it != free_space_collection.end(); it++)
+    {
+        SAFE_LOG(PDO_LOG_DEBUG, "fsi: blocknum %u bytes %d len %u", it->bo.block_num, it->bo.bytes, it->length);
+    }
+}
+
+pstate::block_offset_t pstate::free_space_collector::allocate(const unsigned int& length)
+{
+    //TODO: find and return something
+    return empty_block_offset;
+}
+
 pstate::block_offset_t* pstate::trie_node::goto_next_offset(trie_node_header_t* header)
 {
     if (header->hasNext)
@@ -330,6 +412,15 @@ void pstate::trie_node::do_write_value(data_node_io& dn_io,
     const ByteArray& value,
     block_offset& outBlockOffset)
 {
+    {
+        //if overwriting, delete the current value
+        block_offset current_child_bo;
+        current_child_bo.deserialize_offset(*goto_child_offset(header));
+        if (! current_child_bo.is_empty())
+        {
+            do_delete_value(dn_io, header);
+        }
+    }
     unsigned int bytes_written, total_bytes_written = 0;
     ByteArray baOffset;
     // switch to an empty data node (if necessary)
@@ -405,6 +496,9 @@ void pstate::trie_node::do_delete_value(data_node_io& dn_io, trie_node_header_t*
     data_node& dn = dn_io.cache_retrieve(block_num, false);
     dn.delete_value(current_child_bo.to_ByteArray(), freed_bytes);
     dn_io.cache_done(block_num, false);
+
+    SAFE_LOG(PDO_LOG_DEBUG, "delete value, bytes free %u, collect...", freed_bytes);
+    dn_io.free_space_collector_.collect(current_child_bo.block_offset_, freed_bytes);
 
     delete_child_offset(header);
 }
@@ -635,8 +729,18 @@ ByteArray pstate::data_node::make_offset(unsigned int block_num, unsigned int by
 pstate::data_node::data_node(unsigned int block_num) : data_(FIXED_DATA_NODE_BYTE_SIZE)
 {
     block_num_ = block_num;
-    free_bytes_ = FIXED_DATA_NODE_BYTE_SIZE - sizeof(unsigned int) - sizeof(unsigned int);
-    data_.resize(FIXED_DATA_NODE_BYTE_SIZE);
+    data_.resize(data_end_index());
+    free_bytes_ = data_end_index() - data_begin_index();
+}
+
+unsigned int pstate::data_node::data_begin_index()
+{
+    return sizeof(unsigned int) + sizeof(unsigned int);
+}
+
+unsigned int pstate::data_node::data_end_index()
+{
+    return FIXED_DATA_NODE_BYTE_SIZE;
 }
 
 unsigned int pstate::data_node::get_block_num()

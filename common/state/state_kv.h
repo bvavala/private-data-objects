@@ -136,6 +136,8 @@ namespace state
     public:
         ByteArray make_offset(unsigned int block_num, unsigned int bytes_off);
         data_node(unsigned int block_num);
+        static unsigned int data_begin_index();
+        static unsigned int data_end_index();
         unsigned int get_block_num();
         void serialize_data_header();
         void decrypt_and_deserialize_data(
@@ -181,10 +183,27 @@ namespace state
         std::queue<data_node*> dn_queue_;
     };
 
+    class free_space_collector
+    {
+        typedef struct {
+            block_offset_t bo;
+            unsigned int length;
+        } free_space_item_t;
+    private:
+        //TODO: increase max
+        const unsigned int max_collected_free_space_items = 400;
+        std::vector<free_space_item_t> free_space_collection;
+        bool are_adjacent(const block_offset_t& bo1, const unsigned& length1, const block_offset_t& bo2);
+    public:
+        void collect(const block_offset_t& bo, const unsigned int& length);
+        block_offset_t allocate(const unsigned int& length);
+    };
+
     class data_node_io
     {
     public:
         block_warehouse block_warehouse_;
+        free_space_collector free_space_collector_;
         // append_dn points to a data note pinned in cache
         data_node* append_dn_;
 
