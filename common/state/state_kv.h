@@ -151,6 +151,7 @@ namespace state
             ByteArray& outBuffer,
             bool continue_reading,
             unsigned int continue_reading_bytes);
+        void delete_value(const ByteArray& offset, unsigned int& freed_bytes);
         uint8_t* offset_to_pointer(const ByteArray& offset);
         void load(const ByteArray& state_encryption_key);
         void unload(const ByteArray& state_encryption_key, StateBlockId& outEncryptedDataNodeId);
@@ -265,7 +266,7 @@ namespace state
             block_offset& outBlockOffset);
         static void do_read_value(
             data_node_io& dn_io, trie_node_header_t* trie_node_header, ByteArray& value);
-        static void do_delete(trie_node_header_t* header);
+        static void do_delete_value(data_node_io& dn_io, trie_node_header_t* header);
 
         static void do_split_trie_node(
             data_node_io& dn_io, trie_node_header_t* header, unsigned int spl);

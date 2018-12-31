@@ -371,6 +371,7 @@ void pstate::trie_node::do_read_value(
     if (current_child_bo.is_empty())
     {
         // value is absent
+        //TODO: should we throw an exception?
         return;
     }
 
@@ -391,8 +392,20 @@ void pstate::trie_node::do_read_value(
     }
 }
 
-void pstate::trie_node::do_delete(trie_node_header_t* header)
+void pstate::trie_node::do_delete_value(data_node_io& dn_io, trie_node_header_t* header)
 {
+    pdo::error::ThrowIf<pdo::error::RuntimeError>(
+        !header->hasChild, "delete value, header must have child");
+    block_offset current_child_bo;
+    current_child_bo.deserialize_offset(*goto_child_offset(header));
+
+    //delete value and get the number of freed bytes
+    unsigned int block_num = current_child_bo.block_offset_.block_num;
+    unsigned int freed_bytes;
+    data_node& dn = dn_io.cache_retrieve(block_num, false);
+    dn.delete_value(current_child_bo.to_ByteArray(), freed_bytes);
+    dn_io.cache_done(block_num, false);
+
     delete_child_offset(header);
 }
 
@@ -523,7 +536,7 @@ void pstate::trie_node::operate_trie(data_node_io& dn_io,
                 }
                 case DEL_OP:
                 {
-                    do_delete(current_tnh);
+                    do_delete_value(dn_io, current_tnh);
                     break;
                 }
                 default:
@@ -766,6 +779,31 @@ unsigned int pstate::data_node::read_value(const ByteArray& offset,
     total_bytes_to_read -= bytes_to_read;
     return total_bytes_to_read;  // if 0, read is complete, otherwise it must continue with the next
                                  // data node
+}
+
+void pstate::data_node::delete_value(const ByteArray& offset, unsigned int& freed_bytes)
+{
+    // point cursor at beginning of data
+    unsigned int cursor = block_offset::serialized_offset_to_bytes(offset); 
+    // the provided offset must contain the block num of the current data node
+    pdo::error::ThrowIf<pdo::error::ValueError>(
+        block_offset::serialized_offset_to_block_num(offset) != block_num_,
+        "data node, block num mismatch in offset");
+
+    // mark trie node header (1 byte) as deleted
+    trie_node_header_t* h = (trie_node_header_t*)(data_.data() + cursor);
+    pdo::error::ThrowIf<pdo::error::ValueError>(
+        !h->isValue, "cannot delete, stored value does not have value trie node header");
+    h->isDeleted = 1;
+
+    cursor += sizeof(trie_node_header_t);
+    freed_bytes = sizeof(trie_node_header_t);
+
+    // read and returnthe buffer size second
+    ByteArray ba_buffer_size(data_.begin() + cursor, data_.begin() + cursor + sizeof(size_t));
+    cursor += sizeof(size_t);
+    size_t buffer_size = *((size_t*)ba_buffer_size.data());
+    freed_bytes += sizeof(size_t) + buffer_size;
 }
 
 uint8_t* pstate::data_node::offset_to_pointer(const ByteArray& offset)
