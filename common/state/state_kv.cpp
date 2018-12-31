@@ -851,12 +851,18 @@ pstate::trie_node_header_t* pstate::data_node::write_trie_node(bool isDeleted,
     free_bytes_ -= space_required;
 
     //mark unwritten bytes as deleted trie node header
-    for(unsigned int i = (unsigned int)kcl; i<MAX_KEY_CHUNK_BYTE_SIZE; i++)
-    {
-        *(trie_node::goto_key_chunk(returnHeader) + i) = *((uint8_t*)&deleted_trie_header);
-    }
+    delete_range(trie_node::goto_key_chunk(returnHeader) - data_.data() + returnHeader->keyChunkSize,
+        MAX_KEY_CHUNK_BYTE_SIZE - returnHeader->keyChunkSize);
 
     return returnHeader;
+}
+
+void pstate::data_node::delete_range(unsigned int from, unsigned int length)
+{
+    for(unsigned int i = from; i < length; i++)
+    {
+        *(data_.data() + i) = *((uint8_t*)&deleted_trie_header);
+    }
 }
 
 void pstate::data_node_io::init_append_data_node()

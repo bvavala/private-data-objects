@@ -162,6 +162,7 @@ namespace state
             unsigned int keyChunkBegin,
             unsigned int keyChunkEnd,
             ByteArray& returnOffset);
+        void delete_range(unsigned int from, unsigned int length);
     };
 
     class cache_slots
