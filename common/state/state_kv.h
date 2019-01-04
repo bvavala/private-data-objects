@@ -321,7 +321,6 @@ namespace state
         data_node_io dn_io_;
 
     public:
-        State_KV(StateBlockId& id);
         State_KV(const StateBlockId& id, const ByteArray& key);
         State_KV(const ByteArray& key);
 

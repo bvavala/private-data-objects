@@ -1286,13 +1286,8 @@ void pdo::state::block_warehouse::get_last_datablock_id(pdo::state::StateBlockId
     outId = blockIds_[blockIds_.size() - 1];
 }
 
-pdo::state::State_KV::State_KV(ByteArray& id)
-    : Basic_KV(id), dn_io_(data_node_io(empty_state_encryption_key_))
-{
-}
-
 pdo::state::State_KV::State_KV(const ByteArray& key)
-    : Basic_KV(), state_encryption_key_(key), dn_io_(data_node_io(key))
+    : state_encryption_key_(key), dn_io_(data_node_io(key))
 {
     try
     {
@@ -1323,7 +1318,7 @@ pdo::state::State_KV::State_KV(const ByteArray& key)
 }
 
 pdo::state::State_KV::State_KV(const StateBlockId& id, const ByteArray& key)
-    : Basic_KV(id), state_encryption_key_(key), dn_io_(data_node_io(key))
+    : state_encryption_key_(key), dn_io_(data_node_io(key))
 {
     try
     {
