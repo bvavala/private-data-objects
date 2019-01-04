@@ -257,7 +257,7 @@ namespace state
             size_t kc_length);
 
         static void delete_trie_node(trie_node_header_t* header);
-        static void delete_trie_node_childless(
+        static void delete_trie_node_childless(data_node_io& dn_io,
             trie_node_header_t* header, block_offset& out_bo_new);
         static void update_trie_node_next(
             trie_node_header_t* header, block_offset_t* bo_next, block_offset& out_bo_new);
@@ -289,7 +289,7 @@ namespace state
 
         static void do_split_trie_node(
             data_node_io& dn_io, trie_node_header_t* header, unsigned int spl);
-        static size_t new_trie_node_size();
+        static size_t trie_node_size();
 
         static trie_node_header_t* append_trie_node(data_node_io& dn_io,
             const ByteArray& kvkey,

@@ -305,11 +305,13 @@ void pstate::trie_node::delete_trie_node(trie_node_header_t* header)
     header->isDeleted = 1;
 }
 
-void pstate::trie_node::delete_trie_node_childless(
+void pstate::trie_node::delete_trie_node_childless(data_node_io& dn_io,
     trie_node_header_t* header, block_offset& out_bo_new)
 {
     if (!header->hasChild || *goto_child_offset(header) == empty_block_offset)
     {
+        //release space of trie node
+        dn_io.free_space_collector_.collect(out_bo_new.block_offset_, trie_node::trie_node_size());
         // set new offset as next offset
         out_bo_new.block_offset_ = *goto_next_offset(header);
         // mark node as deleted
@@ -510,7 +512,7 @@ void pstate::trie_node::do_split_trie_node(
         !(header->keyChunkSize > 0 && spl < header->keyChunkSize),
         "split node, wrong key chunk size and/or spl");
     dn_io.add_and_init_append_data_node_cond(
-        trie_node::new_trie_node_size() > dn_io.append_dn_->free_bytes());
+        trie_node::trie_node_size() > dn_io.append_dn_->free_bytes());
 
     ByteArray second_chunk(
         goto_key_chunk(header) + spl, goto_key_chunk(header) + header->keyChunkSize);
@@ -536,7 +538,7 @@ void pstate::trie_node::do_split_trie_node(
     // header pointer and its block_offset (unavailable here) remain unchanged
 }
 
-size_t pstate::trie_node::new_trie_node_size()
+size_t pstate::trie_node::trie_node_size()
 {
     return sizeof(trie_node_h_with_nc_t) + MAX_KEY_CHUNK_BYTE_SIZE;
 }
@@ -550,7 +552,7 @@ pstate::trie_node_header_t* pstate::trie_node::append_trie_node(data_node_io& dn
     ByteArray returnOffset;
     trie_node_header_t* new_tnh;
 
-    dn_io.add_and_init_append_data_node_cond(new_trie_node_size() > dn_io.append_dn_->free_bytes());
+    dn_io.add_and_init_append_data_node_cond(trie_node_size() > dn_io.append_dn_->free_bytes());
     new_tnh = dn_io.append_dn_->write_trie_node(false,  // not deleted
         true,                                           // has next node
         true,                                           // has a child node
@@ -664,7 +666,7 @@ void pstate::trie_node::operate_trie(data_node_io& dn_io,
     if (operation == DEL_OP)
     {
         // check whether we should delete this trie node, while going bottom up
-        delete_trie_node_childless(current_tnh, outBlockOffset);
+        delete_trie_node_childless(dn_io, current_tnh, outBlockOffset);
     }
     // the cached block of currentnh can be released -- the modified field maintains previous
     // updates
@@ -960,7 +962,7 @@ pstate::trie_node_header_t* pstate::data_node::write_trie_node(bool isDeleted,
     pdo::error::ThrowIf<pdo::error::RuntimeError>(!hasNext, "new header must have next");
     pdo::error::ThrowIf<pdo::error::RuntimeError>(!hasChild, "new header must have child");
 
-    size_t space_required = trie_node::new_trie_node_size();
+    size_t space_required = trie_node::trie_node_size();
 
     // check that there is enough space to write
     pdo::error::ThrowIf<pdo::error::RuntimeError>(
