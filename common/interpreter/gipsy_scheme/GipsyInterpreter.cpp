@@ -544,7 +544,7 @@ void GipsyInterpreter::send_message_to_contract(
         ByteArray k(intrinsic_state_key_.begin(), intrinsic_state_key_.end());
         ByteArray v(intrinsic_state.begin(), intrinsic_state.end());
         inoutContractState->PrivilegedPut(k, v);
-
+/*
 #if PDO_DEBUG_BUILD
         {
             //double check intrinsic state
@@ -564,6 +564,7 @@ void GipsyInterpreter::send_message_to_contract(
             }
         }
 #endif  // PDO_DEBUG_BUILD
+*/
         outStateChangedFlag = true;
     }
     else

@@ -260,6 +260,7 @@ void pstate::trie_node::do_operate_trie_child(data_node_io& dn_io,
     const kv_operation_e operation,
     const unsigned int depth,
     const ByteArray& kvkey,
+    const ByteArray& in_value,
     ByteArray& value,
     block_offset& outBlockOffset)
 {
@@ -286,7 +287,7 @@ void pstate::trie_node::do_operate_trie_child(data_node_io& dn_io,
     // operate on child node
     operate_trie(dn_io, child, operation,
         depth + trie_node_header->keyChunkSize,  // all key chunk was matched
-        kvkey, value, current_child_bo);
+        kvkey, in_value, value, current_child_bo);
 
     // if node modified, mark cached block as modified
     update_trie_node_child(trie_node_header, &current_child_bo.block_offset_, outBlockOffset);
@@ -298,6 +299,7 @@ void pstate::trie_node::do_operate_trie_next(data_node_io& dn_io,
     const kv_operation_e operation,
     const unsigned int depth,
     const ByteArray& kvkey,
+    const ByteArray& in_value,
     ByteArray& value,
     block_offset& outBlockOffset)
 {
@@ -322,7 +324,7 @@ void pstate::trie_node::do_operate_trie_next(data_node_io& dn_io,
     // operate on next node
     operate_trie(dn_io, next, operation,
         depth,  // same depth
-        kvkey, value, current_next_bo);
+        kvkey, in_value, value, current_next_bo);
 
     // if node modified, mark cached block as modified
     update_trie_node_next(trie_node_header, &current_next_bo.block_offset_, outBlockOffset);
@@ -464,6 +466,7 @@ void pstate::trie_node::operate_trie(data_node_io& dn_io,
     const kv_operation_e operation,
     const unsigned int depth,
     const ByteArray& kvkey,
+    const ByteArray& in_value,
     ByteArray& value,
     block_offset& outBlockOffset)
 {
@@ -509,7 +512,7 @@ void pstate::trie_node::operate_trie(data_node_io& dn_io,
         if (depth < kvkey.size())
         {  // no match, go next
             do_operate_trie_next(
-                dn_io, current_tnh, operation, depth, kvkey, value, outBlockOffset);
+                dn_io, current_tnh, operation, depth, kvkey, in_value, value, outBlockOffset);
         }
         else
         {  // match EOS, do op
@@ -517,7 +520,7 @@ void pstate::trie_node::operate_trie(data_node_io& dn_io,
             {
                 case PUT_OP:
                 {
-                    do_write_value(dn_io, current_tnh, value, outBlockOffset);
+                    do_write_value(dn_io, current_tnh, in_value, outBlockOffset);
                     break;
                 }
                 case GET_OP:
@@ -542,7 +545,7 @@ void pstate::trie_node::operate_trie(data_node_io& dn_io,
         if (spl == current_tnh->keyChunkSize)
         {  // full match
             do_operate_trie_child(
-                dn_io, current_tnh, operation, depth, kvkey, value, outBlockOffset);
+                dn_io, current_tnh, operation, depth, kvkey, in_value, value, outBlockOffset);
         }
         else
         {  // partial match, continue only on PUT op
@@ -553,7 +556,7 @@ void pstate::trie_node::operate_trie(data_node_io& dn_io,
                 // notice: current_tnh remains the same because: 1) chunk is just shorter; 2) its
                 // next
                 //         (if any) is removed; 3) it had and keeps having a child
-                operate_trie(dn_io, current_tnh, operation, depth, kvkey, value, outBlockOffset);
+                operate_trie(dn_io, current_tnh, operation, depth, kvkey, in_value, value, outBlockOffset);
             }
         }
     }
@@ -585,7 +588,7 @@ void pstate::trie_node::init_trie_root(data_node_io& dn_io)
 }
 
 void pstate::trie_node::operate_trie_root(
-    data_node_io& dn_io, const kv_operation_e operation, const ByteArray& kvkey, ByteArray& value)
+    data_node_io& dn_io, const kv_operation_e operation, const ByteArray& kvkey, const ByteArray& in_value, ByteArray& value)
 {
     unsigned int depth = 0;
     // the first entry of the first data node is the trie root
@@ -603,7 +606,7 @@ void pstate::trie_node::operate_trie_root(
     // save next offset to check for modifications
     block_offset_t bo_next_prev = *goto_next_offset(trie_root);
 
-    do_operate_trie_next(dn_io, trie_root, operation, depth, kvkey, value, root_bo);
+    do_operate_trie_next(dn_io, trie_root, operation, depth, kvkey, in_value, value, root_bo);
 
     // check modifications
     bool current_tnh_modified = !(bo_next_prev == *goto_next_offset(trie_root));
@@ -756,6 +759,8 @@ unsigned int pstate::data_node::read(const ByteArray& offset,
         size_t buffer_size = *((size_t*)ba_buffer_size.data());
         // update the byte to read
         total_bytes_to_read = buffer_size;
+
+        outBuffer.reserve(total_bytes_to_read);
     }
 
     // read as much as possible in outbuffer
@@ -1204,8 +1209,9 @@ ByteArray pstate::State_KV::Get(const ByteArray& key)
 {
     // perform operation
     ByteArray value;
+    const ByteArray in_value;
     const ByteArray& kvkey = key;
-    trie_node::operate_trie_root(dn_io_, GET_OP, kvkey, value);
+    trie_node::operate_trie_root(dn_io_, GET_OP, kvkey, in_value, value);
     return value;
 }
 
@@ -1229,10 +1235,10 @@ void pstate::State_KV::Put(const ByteArray& key, const ByteArray& value)
 {
     // perform operation
     const ByteArray& kvkey = key;
-    ByteArray v = value;
+    ByteArray out_value;
     try
     {
-        trie_node::operate_trie_root(dn_io_, PUT_OP, kvkey, v);
+        trie_node::operate_trie_root(dn_io_, PUT_OP, kvkey, value, out_value);
     }
     catch (pdo::error::RuntimeError& e)
     {
@@ -1255,7 +1261,13 @@ void pstate::State_KV::Put(const ByteArray& key, const ByteArray& value)
 void pstate::State_KV::Delete(const ByteArray& key)
 {
     // perform operation
+    const ByteArray in_value;
     ByteArray value;
     const ByteArray& kvkey = key;
-    trie_node::operate_trie_root(dn_io_, DEL_OP, kvkey, value);
+    trie_node::operate_trie_root(dn_io_, DEL_OP, kvkey, in_value, value);
 }
+
+//void pstate::State_KV::~State_KV()
+//{
+//    SAFE_LOG(PDO_LOG_DEBUG, "STATE DESTRUCTED");
+//}
