@@ -16,9 +16,9 @@
 #include "crypto.h"
 #include "error.h"
 #include "jsonvalue.h"
+#include "log.h"
 #include "parson.h"
 #include "state.h"
-#include "log.h"
 
 namespace pstate = pdo::state;
 
@@ -91,8 +91,8 @@ void pdo::state::StateNode::BlockifyChildren()
         }
         size_t serializedSize = json_serialization_size(j_root_block_value);
         stateBlock_.resize(serializedSize);
-        jret = json_serialize_to_buffer(
-            j_root_block_value, reinterpret_cast<char*>(/*&stateBlock_[0]*/stateBlock_.data()), stateBlock_.size());
+        jret = json_serialize_to_buffer(j_root_block_value,
+            reinterpret_cast<char*>(/*&stateBlock_[0]*/ stateBlock_.data()), stateBlock_.size());
         pdo::error::ThrowIf<pdo::error::RuntimeError>(
             jret != JSONSuccess, "json root block serialization failed");
     }

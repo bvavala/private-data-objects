@@ -156,7 +156,8 @@ namespace state
         void consume_free_space(unsigned int length);
         bool enough_space_for_value(bool continue_writing);
         static void advance_block_offset(block_offset_t& bo, unsigned int length);
-        unsigned int write_at(const ByteArray& buffer, unsigned int write_from, const block_offset_t& bo_at);
+        unsigned int write_at(
+            const ByteArray& buffer, unsigned int write_from, const block_offset_t& bo_at);
         unsigned int read_at(const block_offset_t& bo_at, unsigned int bytes, ByteArray& outBuffer);
         unsigned int append_value(
             const ByteArray& buffer, unsigned int write_from, ByteArray& returnOffSet);
@@ -170,7 +171,7 @@ namespace state
         void unload(const ByteArray& state_encryption_key, StateBlockId& outEncryptedDataNodeId);
 
         trie_node_header_t* write_trie_node(bool isDeleted,
-           bool hasNext,
+            bool hasNext,
             bool hasChild,
             const ByteArray& key,
             unsigned int keyChunkBegin,
@@ -195,18 +196,22 @@ namespace state
 
     class free_space_collector
     {
-        typedef struct {
+        typedef struct
+        {
             block_offset_t bo;
             unsigned int length;
         } free_space_item_t;
+
     private:
         std::vector<free_space_item_t> free_space_collection;
-        bool are_adjacent(const block_offset_t& bo1, const unsigned& length1, const block_offset_t& bo2);
+        bool are_adjacent(
+            const block_offset_t& bo1, const unsigned& length1, const block_offset_t& bo2);
+
     public:
         void collect(const block_offset_t& bo, const unsigned int& length);
         bool allocate(const unsigned int& length, block_offset_t& out_bo);
-        void serialize_in_data_node(data_node &out_dn);
-        void deserialize_from_data_node(data_node &in_dn);
+        void serialize_in_data_node(data_node& out_dn);
+        void deserialize_from_data_node(data_node& in_dn);
     };
 
     class data_node_io
@@ -227,8 +232,10 @@ namespace state
         void consume_add_and_init_append_data_node_cond(bool cond);
         void block_offset_for_appending(block_offset_t& out_bo);
 
-        void write_across_data_nodes(const ByteArray& buffer, unsigned int write_from, const block_offset_t& bo_at);
-        void read_across_data_nodes(const block_offset_t& bo_at, unsigned int length, ByteArray& outBuffer);
+        void write_across_data_nodes(
+            const ByteArray& buffer, unsigned int write_from, const block_offset_t& bo_at);
+        void read_across_data_nodes(
+            const block_offset_t& bo_at, unsigned int length, ByteArray& outBuffer);
 
         struct block_cache_entry_t
         {
@@ -275,8 +282,8 @@ namespace state
             size_t kc_length);
 
         static void delete_trie_node(trie_node_header_t* header);
-        static void delete_trie_node_childless(data_node_io& dn_io,
-            trie_node_header_t* header, block_offset& out_bo_new);
+        static void delete_trie_node_childless(
+            data_node_io& dn_io, trie_node_header_t* header, block_offset& out_bo_new);
         static void update_trie_node_next(
             trie_node_header_t* header, const block_offset_t* bo_next);
         static void update_trie_node_child(

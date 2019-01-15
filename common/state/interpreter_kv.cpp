@@ -45,8 +45,7 @@ pdo::state::Interpreter_KV::Interpreter_KV(const ByteArray& id, const ByteArray&
 {
 }
 
-pdo::state::Interpreter_KV::Interpreter_KV(const ByteArray& encryption_key)
-    : kv_(encryption_key)
+pdo::state::Interpreter_KV::Interpreter_KV(const ByteArray& encryption_key) : kv_(encryption_key)
 {
 }
 
@@ -71,7 +70,7 @@ void pdo::state::Interpreter_KV::Delete(const ByteArray& key)
 }
 
 //########## FUNCTION BELOW ARE BASED ON THE ONES
-//ABOVE################################################################
+// ABOVE################################################################
 
 ByteArray pdo::state::Interpreter_KV::PrivilegedGet(const ByteArray& key)
 {
