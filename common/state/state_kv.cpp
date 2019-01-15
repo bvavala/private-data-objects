@@ -179,8 +179,6 @@ void pstate::free_space_collector::collect(const block_offset_t& bo, const unsig
         return;
     }
 
-    SAFE_LOG(PDO_LOG_DEBUG, "collecting %u %u, %u bytes", bo.block_num, bo.bytes, length);
-
     auto it = free_space_collection.begin();
     while(1)
     {
@@ -197,7 +195,6 @@ void pstate::free_space_collector::collect(const block_offset_t& bo, const unsig
                 auto prev_it = std::prev(it);
                 if(are_adjacent(prev_it->bo, prev_it->length, fsi.bo))
                 {
-                    SAFE_LOG(PDO_LOG_DEBUG, "adjacent with prev, merge");
                     //update item to be inserted
                     fsi.bo = prev_it->bo;
                     fsi.length += prev_it->length;
@@ -208,7 +205,6 @@ void pstate::free_space_collector::collect(const block_offset_t& bo, const unsig
             //also, check if it can merge with current
             if(it != free_space_collection.end() && are_adjacent(fsi.bo, fsi.length, it->bo))
             {
-                SAFE_LOG(PDO_LOG_DEBUG, "adjacent with next, merge");
                 //item to be inserted is the same, just increase length
                 fsi.length += it->length;
                 it = free_space_collection.erase(it);
@@ -221,35 +217,19 @@ void pstate::free_space_collector::collect(const block_offset_t& bo, const unsig
         //no insert, go to next
         it++;
     }
-
-    //dump table
-    for(auto it = free_space_collection.begin(); it != free_space_collection.end(); it++)
-    {
-        SAFE_LOG(PDO_LOG_DEBUG, "fsi: blocknum %u bytes %d len %u", it->bo.block_num, it->bo.bytes, it->length);
-    }
-}
-
-pstate::block_offset_t* pstate::trie_node::goto_next_offset(trie_node_header_t* header)
-{
-    if (header->hasNext)
-    {
-        trie_node_h_with_n_t* p = (trie_node_h_with_n_t*)header;
-        return &(p->next_offset);
-    }
-    return NULL;
 }
 
 bool pstate::free_space_collector::allocate(const unsigned int& length, block_offset_t& out_bo)
 {
     bool space_found = false;
 
-    SAFE_LOG(PDO_LOG_DEBUG, "search for space to be reused");
+    //SAFE_LOG(PDO_LOG_DEBUG, "search for space to be reused");
     for(auto it = free_space_collection.begin(); it != free_space_collection.end(); it++)
     {
         if(it->length >= length)
         {
             space_found = true;
-            SAFE_LOG(PDO_LOG_DEBUG, "found: blocknum %u bytes %d len %u", it->bo.block_num, it->bo.bytes, it->length);
+            //SAFE_LOG(PDO_LOG_DEBUG, "found: blocknum %u bytes %d len %u", it->bo.block_num, it->bo.bytes, it->length);
             //return the block offset
             out_bo = it->bo;
 
@@ -257,14 +237,14 @@ bool pstate::free_space_collector::allocate(const unsigned int& length, block_of
             {
                 //the requested length match, so remove item
                 free_space_collection.erase(it);
-                SAFE_LOG(PDO_LOG_DEBUG, "space allocated, item removed");
+                //SAFE_LOG(PDO_LOG_DEBUG, "space allocated, item removed");
             }
             else
             {
                 //item has more space than necessary, so update it
                 data_node::advance_block_offset(it->bo, length);
                 it->length -= length;
-                SAFE_LOG(PDO_LOG_DEBUG, "space allocated, item reduced");
+                //SAFE_LOG(PDO_LOG_DEBUG, "space allocated, item reduced");
             }
             break;
         }
@@ -275,10 +255,6 @@ bool pstate::free_space_collector::allocate(const unsigned int& length, block_of
     //  TODO trigger kv compaction
     //}
 
-    for(auto it = free_space_collection.begin(); it != free_space_collection.end(); it++)
-    {
-        SAFE_LOG(PDO_LOG_DEBUG, "fsi: blocknum %u bytes %d len %u", it->bo.block_num, it->bo.bytes, it->length);
-    }
     return space_found;
 }
 
@@ -303,7 +279,6 @@ void pstate::free_space_collector::serialize_in_data_node(data_node &out_dn)
         data_node::advance_block_offset(bo, sizeof(free_space_item_t));
         items++;
     }
-    SAFE_LOG(PDO_LOG_DEBUG, "fsi serialized %u items", items);
 }
 
 void pstate::free_space_collector::deserialize_from_data_node(data_node &in_dn)
@@ -324,32 +299,18 @@ void pstate::free_space_collector::deserialize_from_data_node(data_node &in_dn)
         free_space_collection.push_back(*((free_space_item_t*)ba_free_space_item.data()));
         ba_free_space_item.clear();
     }
+}
 
-    SAFE_LOG(PDO_LOG_DEBUG, "fsi deserialized items");
-    for(auto it = free_space_collection.begin(); it != free_space_collection.end(); it++)
-    {
-        SAFE_LOG(PDO_LOG_DEBUG, "fsi: blocknum %u bytes %d len %u", it->bo.block_num, it->bo.bytes, it->length);
-    }
-    SAFE_LOG(PDO_LOG_DEBUG, "fsi deserialized items, total %u", free_space_collection.size());
+pstate::block_offset_t* pstate::trie_node::goto_next_offset(trie_node_header_t* header)
+{
+    trie_node_h_with_nc_t* p = (trie_node_h_with_nc_t*)header;
+    return &(p->next_offset);
 }
 
 pstate::block_offset_t* pstate::trie_node::goto_child_offset(trie_node_header_t* header)
 {
-    if (header->hasNext)
-    {
-        if (header->hasChild)
-        {
-            trie_node_h_with_nc_t* p = (trie_node_h_with_nc_t*)header;
-            return &(p->child_offset);
-        }
-        return NULL;
-    }
-    if (header->hasChild)
-    {
-        trie_node_h_with_c_t* p = (trie_node_h_with_c_t*)header;
-        return &(p->child_offset);
-    }
-    return NULL;
+    trie_node_h_with_nc_t* p = (trie_node_h_with_nc_t*)header;
+    return &(p->child_offset);
 }
 
 uint8_t* pstate::trie_node::goto_key_chunk(trie_node_header_t* header)
@@ -359,11 +320,7 @@ uint8_t* pstate::trie_node::goto_key_chunk(trie_node_header_t* header)
         return NULL;
     }
     uint8_t* p = (uint8_t*)header;
-    p += sizeof(trie_node_header_t);
-    if (header->hasNext)
-        p += sizeof(block_offset_t);
-    if (header->hasChild)
-        p += sizeof(block_offset_t);
+    p += sizeof(trie_node_h_with_nc_t);
     return p;
 }
 
@@ -512,7 +469,6 @@ void pstate::trie_node::do_write_value(data_node_io& dn_io,
     const ByteArray& value,
     block_offset& outBlockOffset)
 {
-    SAFE_LOG(PDO_LOG_DEBUG, "writing new value, try delete old first if any");
     {
         //if overwriting, delete the current value
         block_offset current_child_bo;
@@ -537,7 +493,6 @@ void pstate::trie_node::do_write_value(data_node_io& dn_io,
     }
     // update child with offset of initial write
     update_trie_node_child(header, &bo);
-    SAFE_LOG(PDO_LOG_DEBUG, "writing value at %u %u", bo.block_num, bo.bytes);
 
     // write trie node first
     ByteArray ba_trie_node(sizeof(trie_node_header_t), 0);
@@ -594,12 +549,10 @@ void pstate::trie_node::do_read_value(
     unsigned int vs = value_size;
     try
     {
-        SAFE_LOG(PDO_LOG_DEBUG, "reserving %u bytes in value before reading", value_size);
         value.reserve(vs);
     }
     catch (std::exception& e)
     {
-        SAFE_LOG(PDO_LOG_DEBUG, "reserve value size failed");
         throw pdo::error::Error(PDO_ERR_RUNTIME, std::string("reserve value size failed, ") + std::string(e.what()));
     }
     dn_io.read_across_data_nodes(bo, vs, value);
@@ -613,14 +566,12 @@ void pstate::trie_node::do_delete_value(data_node_io& dn_io, trie_node_header_t*
     current_child_bo.deserialize_offset(*goto_child_offset(header));
 
     //delete value and get the number of freed bytes
-    SAFE_LOG(PDO_LOG_DEBUG, "delete value at %u %u", current_child_bo.block_offset_.block_num, current_child_bo.block_offset_.bytes);
     unsigned int block_num = current_child_bo.block_offset_.block_num;
     unsigned int freed_bytes;
     data_node& dn = dn_io.cache_retrieve(block_num, false);
     dn.delete_value(current_child_bo.to_ByteArray(), freed_bytes);
     dn_io.cache_done(block_num, false);
 
-    SAFE_LOG(PDO_LOG_DEBUG, "delete value, bytes free %u, collect...", freed_bytes);
     dn_io.free_space_collector_.collect(current_child_bo.block_offset_, freed_bytes);
 
     delete_child_offset(header);
@@ -845,7 +796,7 @@ void pstate::trie_node::init_trie_root(data_node_io& dn_io)
     ByteArray retOffset;
     ByteArray emptyKey;
     block_offset_t expected_block_offset = {
-        0, FIXED_DATA_NODE_BYTE_SIZE - dn_io.append_dn_->free_bytes()};
+        0, data_node::data_end_index() - dn_io.append_dn_->free_bytes()};
     dn_io.append_dn_->write_trie_node(false, true, true, emptyKey, 0, 0, retOffset);
     // check
     block_offset bo;
@@ -865,7 +816,7 @@ void pstate::trie_node::operate_trie_root(
     data_node& dn = dn_io.cache_retrieve(root_block_num, true);  // get first data node
     // get pointer to trie root
     block_offset root_bo;
-    root_bo.block_offset_ = {root_block_num, block_offset::offset_size()};
+    root_bo.block_offset_ = {root_block_num, data_node::data_begin_index()};
     ByteArray ba_serialized_offset;
     ba_serialized_offset.resize(block_offset::offset_size());
     root_bo.serialize_offset(ba_serialized_offset);
@@ -986,8 +937,6 @@ bool pstate::data_node::enough_space_for_value(bool continue_writing)
 
 void pstate::data_node::advance_block_offset(block_offset_t& bo, unsigned int length)
 {
-    //SAFE_LOG(PDO_LOG_DEBUG, "original bo blocknum %u bytes %d len %u", bo.block_num, bo.bytes, length);
-
     unsigned int block_data_len = pstate::data_node::data_end_index() - pstate::data_node::data_begin_index();
     //advance as many blocks a possible
     unsigned int blocks_to_add = length / block_data_len;
@@ -1035,8 +984,6 @@ unsigned int pstate::data_node::read_at(const block_offset_t& bo_at, unsigned in
     unsigned int bytes_to_read =
         (bytes <= bytes_to_endof_data ? bytes : bytes_to_endof_data);
 
-    SAFE_LOG(PDO_LOG_DEBUG, "outb size %u, readingi block num %u from %u to %u (endindex %u) ", outBuffer.size(), bo_at.block_num, bo_at.bytes, bo_at.bytes + bytes_to_read, data_end_index());
-    SAFE_LOG(PDO_LOG_DEBUG, "reading %u bytes in get buffer...", bytes_to_read);
     try
     {
     outBuffer.insert(
@@ -1046,10 +993,8 @@ unsigned int pstate::data_node::read_at(const block_offset_t& bo_at, unsigned in
     }
     catch (std::exception& e)
     {
-        SAFE_LOG(PDO_LOG_DEBUG, "v insert failed");
         throw pdo::error::Error(PDO_ERR_RUNTIME, std::string("v insert failed, ") + std::string(e.what()));
     }
-    SAFE_LOG(PDO_LOG_DEBUG, "reading %u bytes in get buffer...done", bytes_to_read);
 
     //return bytes read
     return bytes_to_read;
@@ -1063,7 +1008,7 @@ unsigned int pstate::data_node::append_value(
         !enough_space_for_value(write_from > 0), "data node, not enough space to write");
 
     // compute cursor where to start writing
-    unsigned int cursor = data_.size() - free_bytes_;
+    unsigned int cursor = data_end_index() - free_bytes_;
     // compute return offset
     returnOffSet = make_offset(block_num_, cursor);
 
@@ -1104,7 +1049,7 @@ unsigned int pstate::data_node::read_value(const ByteArray& offset,
     unsigned int continue_reading_bytes)
 {
     // point cursor at beginning of data
-    unsigned int cursor = block_offset::offset_size();
+    unsigned int cursor = data_begin_index();
     unsigned int total_bytes_to_read = continue_reading_bytes;
     if (!continue_reading)
     {
@@ -1142,11 +1087,11 @@ unsigned int pstate::data_node::read_value(const ByteArray& offset,
     }
 
     // read as much as possible in outbuffer
-    unsigned int bytes_to_endof_data = data_.size() - cursor;
+    unsigned int bytes_to_endof_data = data_end_index() - cursor;
     unsigned int bytes_to_read =
         (total_bytes_to_read < bytes_to_endof_data ? total_bytes_to_read : bytes_to_endof_data);
     pdo::error::ThrowIf<pdo::error::ValueError>(
-        bytes_to_read + cursor > data_.size(), "data node, bytes_to_read overflows");
+        bytes_to_read + cursor > data_end_index(), "data node, bytes_to_read overflows");
     try
     {
         outBuffer.insert(
@@ -1195,7 +1140,7 @@ uint8_t* pstate::data_node::offset_to_pointer(const ByteArray& offset)
         "request pointer does not match block num");
 
     unsigned int cursor = block_offset::serialized_offset_to_bytes(offset);
-    pdo::error::ThrowIf<pdo::error::RuntimeError>(cursor > FIXED_DATA_NODE_BYTE_SIZE - free_bytes_,
+    pdo::error::ThrowIf<pdo::error::RuntimeError>(cursor > data_end_index() - free_bytes_,
         "error setting cursor in offset to pointer");
 
     return data_.data() + cursor;
@@ -1312,7 +1257,6 @@ void pstate::data_node_io::init_append_data_node()
 
 void pstate::data_node_io::add_and_init_append_data_node()
 {
-    SAFE_LOG(PDO_LOG_DEBUG, "add_and_init_append_data_node (last block num %u)", block_warehouse_.last_appended_data_block_num_);
     pdo::error::ThrowIf<pdo::error::RuntimeError>(append_dn_->free_bytes() == data_node::data_end_index() - data_node::data_begin_index(),
         "appending new data node, but current one is empty");
 
@@ -1397,8 +1341,8 @@ void pstate::data_node_io::read_across_data_nodes(const block_offset_t& bo_at, u
         }
         catch (std::exception& e)
         {
-            SAFE_LOG(PDO_LOG_DEBUG, "read at call failed");
-            throw pdo::error::Error(PDO_ERR_RUNTIME, std::string("read at, call failed, ") + std::string(e.what()));
+            SAFE_LOG_EXCEPTION("read_at call failed");
+            throw;
         }
         cache_done(bo.block_num, true);
 
@@ -1576,7 +1520,6 @@ void pstate::data_node_io::cache_modified(unsigned int block_num)
 void pdo::state::block_warehouse::serialize_block_ids(pdo::state::StateNode& node)
 {
     node.ClearChildren();
-    SAFE_LOG(PDO_LOG_ERROR, "state blocks: %u", blockIds_.size());
     for (unsigned int i = 0; i < blockIds_.size(); i++)
     {
         node.AppendChildId(blockIds_[i]);
