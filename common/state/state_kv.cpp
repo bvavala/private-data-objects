@@ -452,7 +452,7 @@ void pstate::trie_node::do_operate_trie_child(data_node_io& dn_io,
     // retrieve child node from cache (if it exists)
     current_child_bo.deserialize_offset(*goto_child_offset(trie_node_header));
     cached_child_block_index = current_child_bo.block_offset_.block_num;
-    data_node& dn = dn_io.cache_retrieve(cached_child_block_index, false);
+    data_node& dn = dn_io.cache_.retrieve(cached_child_block_index, false);
     if (current_child_bo.is_empty())
     {
         child = NULL;
@@ -469,7 +469,7 @@ void pstate::trie_node::do_operate_trie_child(data_node_io& dn_io,
 
     // if node modified, mark cached block as modified
     update_trie_node_child(trie_node_header, &current_child_bo.block_offset_);
-    dn_io.cache_done(cached_child_block_index, false);  // keeps modified flag of operate_trie
+    dn_io.cache_.done(cached_child_block_index, false);  // keeps modified flag of operate_trie
 }
 
 void pstate::trie_node::do_operate_trie_next(data_node_io& dn_io,
@@ -489,7 +489,7 @@ void pstate::trie_node::do_operate_trie_next(data_node_io& dn_io,
     // retrieve next node from cache (if it exists) -- i.e., cache the block of the next node
     current_next_bo.deserialize_offset(*goto_next_offset(trie_node_header));
     cached_next_block_index = current_next_bo.block_offset_.block_num;
-    data_node& dn = dn_io.cache_retrieve(cached_next_block_index, false);
+    data_node& dn = dn_io.cache_.retrieve(cached_next_block_index, false);
     if (current_next_bo.is_empty())
     {
         next = NULL;
@@ -506,7 +506,7 @@ void pstate::trie_node::do_operate_trie_next(data_node_io& dn_io,
 
     // if node modified, mark cached block as modified
     update_trie_node_next(trie_node_header, &current_next_bo.block_offset_);
-    dn_io.cache_done(cached_next_block_index, false);  // keeps modified flag of operate_trie
+    dn_io.cache_.done(cached_next_block_index, false);  // keeps modified flag of operate_trie
 }
 
 void pstate::trie_node::do_write_value(data_node_io& dn_io,
@@ -614,9 +614,9 @@ void pstate::trie_node::do_delete_value(data_node_io& dn_io, trie_node_header_t*
     //delete value and get the number of freed bytes
     unsigned int block_num = current_child_bo.block_offset_.block_num;
     unsigned int freed_bytes;
-    data_node& dn = dn_io.cache_retrieve(block_num, false);
+    data_node& dn = dn_io.cache_.retrieve(block_num, false);
     dn.delete_value(current_child_bo.to_ByteArray(), freed_bytes);
-    dn_io.cache_done(block_num, false);
+    dn_io.cache_.done(block_num, false);
 
     dn_io.free_space_collector_.collect(current_child_bo.block_offset_, freed_bytes);
 
@@ -720,7 +720,7 @@ void pstate::trie_node::operate_trie(data_node_io& dn_io,
 
     // ensure it remains cached
     cur_thn_block_num = outBlockOffset.block_offset_.block_num;
-    dn_io.cache_retrieve(cur_thn_block_num, false);
+    dn_io.cache_.retrieve(cur_thn_block_num, false);
     block_offset_t orig_next_bo = *goto_next_offset(current_tnh);
     block_offset_t orig_child_bo = *goto_child_offset(current_tnh);
 
@@ -793,7 +793,7 @@ void pstate::trie_node::operate_trie(data_node_io& dn_io,
     // updates
     bool cache_modified = (orig_next_bo != *goto_next_offset(current_tnh) ||
                            orig_child_bo != *goto_child_offset(current_tnh));
-    dn_io.cache_done(cur_thn_block_num, cache_modified);
+    dn_io.cache_.done(cur_thn_block_num, cache_modified);
 }  // operate_trie
 
 void pstate::trie_node::init_trie_root(data_node_io& dn_io)
@@ -811,7 +811,7 @@ void pstate::trie_node::operate_trie_root(
     // if the trie contains data then the root has a next node
     // if the trie is empty then the next node is null/empty
     unsigned int root_block_num = dn_io.block_warehouse_.get_root_block_num();
-    data_node& dn = dn_io.cache_retrieve(root_block_num, true);  // get first data node
+    data_node& dn = dn_io.cache_.retrieve(root_block_num, true);  // get first data node
     // get pointer to trie root
     block_offset root_bo;
     root_bo.block_offset_ = {root_block_num, data_node::data_begin_index()};
@@ -827,7 +827,7 @@ void pstate::trie_node::operate_trie_root(
     // check modifications
     bool current_tnh_modified = !(bo_next_prev == *goto_next_offset(trie_root));
     // release block in cache
-    dn_io.cache_done(root_block_num, current_tnh_modified);
+    dn_io.cache_.done(root_block_num, current_tnh_modified);
 
     // NOTICE: we do NOT sync the cache here, so modifications are not reflected in the block store;
     //         in the case of failure, any modification is discarded, the transaction in progress will not succeed,
@@ -1229,14 +1229,14 @@ void pstate::data_node_io::initialize(pdo::state::StateNode& node)
         //get the data node of the free space collection
         block_warehouse_.last_appended_data_block_num_ =
             block_warehouse_.blockIds_.size() - 1;
-        data_node& fsc_dn = cache_retrieve(block_warehouse_.last_appended_data_block_num_, false);
+        data_node& fsc_dn = cache_.retrieve(block_warehouse_.last_appended_data_block_num_, false);
         //save the identity of the data node containing it
         block_warehouse_.get_datablock_id_from_datablock_num(
             block_warehouse_.last_appended_data_block_num_, free_space_collector_.original_block_id_of_collection);
         //deserialize the collection
         free_space_collector_.deserialize_from_data_node(fsc_dn);
         //rmeove last data node
-        cache_done(block_warehouse_.last_appended_data_block_num_, false);
+        cache_.done(block_warehouse_.last_appended_data_block_num_, false);
         block_warehouse_.remove_block_id_from_datablock_num(block_warehouse_.last_appended_data_block_num_);
     }
 
@@ -1252,8 +1252,8 @@ void pstate::data_node_io::init_append_data_node()
     StateBlockId data_node_id;
     block_warehouse_.get_datablock_id_from_datablock_num(
         block_warehouse_.last_appended_data_block_num_, data_node_id);
-    append_dn_ = &cache_retrieve(block_warehouse_.last_appended_data_block_num_, true);
-    cache_done(block_warehouse_.last_appended_data_block_num_,
+    append_dn_ = &cache_.retrieve(block_warehouse_.last_appended_data_block_num_, true);
+    cache_.done(block_warehouse_.last_appended_data_block_num_,
         true);  // nobody is using it now; new nodes are modified
 }
 
@@ -1263,18 +1263,18 @@ void pstate::data_node_io::add_and_init_append_data_node()
         "appending new data node after empty one");
 
     // make space in cache if necessary
-    cache_unpin(block_warehouse_.last_appended_data_block_num_);
-    cache_replacement_policy();
+    cache_.unpin(block_warehouse_.last_appended_data_block_num_);
+    cache_.replacement_policy();
 
     // allocate and initialized data node
-    append_dn_ = cache_slots_.allocate();
+    append_dn_ = cache_.slots_.allocate();
     pdo::error::ThrowIf<pdo::error::RuntimeError>(!append_dn_, "slot allocate, null pointer");
     *append_dn_ = data_node(++block_warehouse_.last_appended_data_block_num_);
 
     // put and pin it in cache
-    cache_put(block_warehouse_.last_appended_data_block_num_, append_dn_);
-    cache_pin(block_warehouse_.last_appended_data_block_num_);
-    cache_modified(block_warehouse_.last_appended_data_block_num_);
+    cache_.put(block_warehouse_.last_appended_data_block_num_, append_dn_);
+    cache_.pin(block_warehouse_.last_appended_data_block_num_);
+    cache_.modified(block_warehouse_.last_appended_data_block_num_);
 
     // add empty id in list
     StateBlockId dn_id(STATE_BLOCK_ID_LENGTH, 0);
@@ -1313,9 +1313,9 @@ void pstate::data_node_io::write_across_data_nodes(const ByteArray& buffer, unsi
     // start writing value
     while(total_bytes_written < buffer.size())
     {
-        data_node& dn = cache_retrieve(bo.block_num, false);
+        data_node& dn = cache_.retrieve(bo.block_num, false);
         bytes_written = dn.write_at(buffer, total_bytes_written, bo);
-        cache_done(bo.block_num, true);
+        cache_.done(bo.block_num, true);
 
         //increment written bytes and advance block offset
         total_bytes_written += bytes_written;
@@ -1336,7 +1336,7 @@ void pstate::data_node_io::read_across_data_nodes(const block_offset_t& bo_at, u
     while(total_bytes_read < length)
     {
 
-        data_node& dn = cache_retrieve(bo.block_num, false);
+        data_node& dn = cache_.retrieve(bo.block_num, false);
         try
         {
         bytes_read = dn.read_at(bo, length - total_bytes_read, out_buffer);
@@ -1346,7 +1346,7 @@ void pstate::data_node_io::read_across_data_nodes(const block_offset_t& bo_at, u
             SAFE_LOG_EXCEPTION("read_at call failed");
             throw;
         }
-        cache_done(bo.block_num, true);
+        cache_.done(bo.block_num, true);
 
         //increment read bytes and advance block offset
         total_bytes_read += bytes_read;
@@ -1354,10 +1354,10 @@ void pstate::data_node_io::read_across_data_nodes(const block_offset_t& bo_at, u
     }
 }
 
-void pstate::data_node_io::cache_replacement_policy()
+void pstate::Cache::replacement_policy()
 {
     pdo::error::ThrowIf<pdo::error::RuntimeError>(
-            block_cache_.size() + cache_slots_.available_slots() != BLOCK_CACHE_MAX_ITEMS, "cache replacement, invariant not satisfied");
+            block_cache_.size() + slots_.available_slots() != BLOCK_CACHE_MAX_ITEMS, "cache replacement, invariant not satisfied");
 
     while (block_cache_.size() >= BLOCK_CACHE_MAX_ITEMS)
     {
@@ -1379,48 +1379,48 @@ void pstate::data_node_io::cache_replacement_policy()
         }
         pdo::error::ThrowIf<pdo::error::RuntimeError>(
             index_to_remove == -1, "cache replacement, no item to replace");
-        cache_flush_entry(index_to_remove);
+        flush_entry(index_to_remove);
     }
 }
 
-void pstate::data_node_io::cache_drop_entry(unsigned int block_num)
+void pstate::Cache::drop_entry(unsigned int block_num)
 {
     std::map<unsigned int, block_cache_entry_t>::iterator it;
     it = block_cache_.find(block_num);
     block_cache_entry_t& bce = it->second;
-    cache_slots_.release(&(bce.dn));
+    slots_.release(&(bce.dn));
     block_cache_.erase(it);
 }
 
-void pstate::data_node_io::cache_drop()
+void pstate::Cache::drop()
 {
     std::map<unsigned int, block_cache_entry_t>::iterator it;
     while (!block_cache_.empty())
     {
         it = block_cache_.begin();
-        cache_drop_entry(it->first);
+        drop_entry(it->first);
     }
 }
 
-void pstate::data_node_io::cache_flush_entry(unsigned int block_num)
+void pstate::Cache::flush_entry(unsigned int block_num)
 {
     // sync
-    cache_sync_entry(block_num);
+    sync_entry(block_num);
     // drop
-    cache_drop_entry(block_num);
+    drop_entry(block_num);
 }
 
-void pstate::data_node_io::cache_flush()
+void pstate::Cache::flush()
 {
     std::map<unsigned int, block_cache_entry_t>::iterator it;
     while (!block_cache_.empty())
     {
         it = block_cache_.begin();
-        cache_flush_entry(it->first);
+        flush_entry(it->first);
     }
 }
 
-void pstate::data_node_io::cache_sync_entry(unsigned int block_num)
+void pstate::Cache::sync_entry(unsigned int block_num)
 {
     std::map<unsigned int, block_cache_entry_t>::iterator it;
 
@@ -1441,21 +1441,21 @@ void pstate::data_node_io::cache_sync_entry(unsigned int block_num)
     }
 }
 
-void pstate::data_node_io::cache_sync()
+void pstate::Cache::sync()
 {
     std::map<unsigned int, block_cache_entry_t>::iterator it;
     for (it = block_cache_.begin(); it != block_cache_.end(); ++it)
     {
-        cache_sync_entry(it->first);
+        sync_entry(it->first);
     }
 }
 
-void pstate::data_node_io::cache_put(unsigned int block_num, data_node* dn)
+void pstate::Cache::put(unsigned int block_num, data_node* dn)
 {
     //drop the current cache entry (if present)
     if (block_cache_.count(block_num) != 0)
     {
-        cache_drop_entry(block_num);
+        drop_entry(block_num);
     }
 
     //add new cache entry
@@ -1468,26 +1468,26 @@ void pstate::data_node_io::cache_put(unsigned int block_num, data_node* dn)
     block_cache_[block_num] = bce;
 }
 
-pstate::data_node& pstate::data_node_io::cache_retrieve(unsigned int block_num, bool pinned)
+pstate::data_node& pstate::Cache::retrieve(unsigned int block_num, bool pinned)
 {
     if (block_cache_.count(block_num) == 0)
     {  // not in cache
-        pstate::data_node_io::cache_replacement_policy();
+        replacement_policy();
 
         StateBlockId data_node_id;
         block_warehouse_.get_datablock_id_from_datablock_num(block_num, data_node_id);
 
         // allocate data node and load block into it
-        data_node* dn = cache_slots_.allocate();
+        data_node* dn = slots_.allocate();
         pdo::error::ThrowIf<pdo::error::RuntimeError>(!dn, "slot allocate, null pointer");
         dn->deserialize_original_encrypted_data_id(data_node_id);
         dn->load(block_warehouse_.state_encryption_key_);
 
         // cache it
-        cache_put(block_num, dn);
+        put(block_num, dn);
 
         if (pinned)
-            cache_pin(block_num);
+            pin(block_num);
     }
     // now it is in cache, grab it
     block_cache_entry_t& bce = block_cache_[block_num];
@@ -1495,7 +1495,7 @@ pstate::data_node& pstate::data_node_io::cache_retrieve(unsigned int block_num, 
     return *bce.dn;
 }
 
-void pstate::data_node_io::cache_done(unsigned int block_num, bool modified)
+void pstate::Cache::done(unsigned int block_num, bool modified)
 {
     pdo::error::ThrowIf<pdo::error::RuntimeError>(
         block_cache_.count(block_num) == 0, "cache done, item not in cache");
@@ -1505,7 +1505,7 @@ void pstate::data_node_io::cache_done(unsigned int block_num, bool modified)
         bce.modified = modified;
 }
 
-void pstate::data_node_io::cache_pin(unsigned int block_num)
+void pstate::Cache::pin(unsigned int block_num)
 {
     pdo::error::ThrowIf<pdo::error::RuntimeError>(
         block_cache_.count(block_num) == 0, "cache done, item not in cache");
@@ -1513,7 +1513,7 @@ void pstate::data_node_io::cache_pin(unsigned int block_num)
     bce.pinned = true;
 }
 
-void pstate::data_node_io::cache_unpin(unsigned int block_num)
+void pstate::Cache::unpin(unsigned int block_num)
 {
     pdo::error::ThrowIf<pdo::error::RuntimeError>(
         block_cache_.count(block_num) == 0, "cache done, item not in cache");
@@ -1521,7 +1521,7 @@ void pstate::data_node_io::cache_unpin(unsigned int block_num)
     bce.pinned = false;
 }
 
-void pstate::data_node_io::cache_modified(unsigned int block_num)
+void pstate::Cache::modified(unsigned int block_num)
 {
     pdo::error::ThrowIf<pdo::error::RuntimeError>(
         block_cache_.count(block_num) == 0, "cache done, item not in cache");
@@ -1657,7 +1657,7 @@ pdo::state::State_KV::State_KV(const ByteArray& key)
         trie_node::init_trie_root(dn_io_);
 
         // pin in cache the first one
-        dn_io_.cache_pin(dn_io_.block_warehouse_.get_root_block_num());
+        dn_io_.cache_.pin(dn_io_.block_warehouse_.get_root_block_num());
     }
     catch(const std::exception& e)
     {
@@ -1710,7 +1710,7 @@ void pdo::state::State_KV::Finalize(ByteArray& outId)
         }
 
         // flush cache first
-        dn_io_.cache_flush();
+        dn_io_.cache_.flush();
 
         // serialize block ids
         dn_io_.block_warehouse_.serialize_block_ids(rootNode_);

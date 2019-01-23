@@ -222,6 +222,42 @@ namespace state
         void deserialize_from_data_node(data_node &in_dn);
     };
 
+    class Cache
+    {
+    private:
+        block_warehouse& block_warehouse_;
+    public:
+        struct block_cache_entry_t
+        {
+            bool pinned;
+            unsigned int references;
+            bool modified;
+            uint64_t clock;
+            data_node* dn;
+        };
+
+        Cache(block_warehouse& bw): block_warehouse_(bw) {}
+
+        std::map<unsigned int, block_cache_entry_t> block_cache_;
+        cache_slots slots_;
+        uint64_t cache_clock_ = 0;
+
+        void replacement_policy();
+        void dump();
+        void drop_entry(unsigned int block_num);
+        void drop();
+        void flush_entry(unsigned int block_num);
+        void flush();
+        void sync_entry(unsigned int block_num);
+        void sync();
+        void put(unsigned int block_num, data_node* dn);
+        data_node& retrieve(unsigned int block_num, bool pinned);
+        void done(unsigned int block_num, bool modified);
+        void pin(unsigned int block_num);
+        void unpin(unsigned int block_num);
+        void modified(unsigned int block_num);
+    };
+
     class data_node_io
     {
     public:
@@ -229,8 +265,9 @@ namespace state
         free_space_collector free_space_collector_;
         // append_dn points to a data note pinned in cache
         data_node* append_dn_;
+        Cache cache_;
 
-        data_node_io(const ByteArray& key) : block_warehouse_(key) {}
+        data_node_io(const ByteArray& key) : block_warehouse_(key), cache_(block_warehouse_) {}
         void initialize(pdo::state::StateNode& node);
 
         void init_append_data_node();
@@ -242,33 +279,6 @@ namespace state
 
         void write_across_data_nodes(const ByteArray& buffer, unsigned int write_from, const block_offset_t& bo_at);
         void read_across_data_nodes(const block_offset_t& bo_at, unsigned int length, ByteArray& outBuffer);
-
-        struct block_cache_entry_t
-        {
-            bool pinned;
-            unsigned int references;
-            bool modified;
-            uint64_t clock;
-            data_node* dn;
-        };
-        std::map<unsigned int, block_cache_entry_t> block_cache_;
-        cache_slots cache_slots_;
-        uint64_t cache_clock_ = 0;
-
-        void cache_replacement_policy();
-        void cache_dump();
-        void cache_drop_entry(unsigned int block_num);
-        void cache_drop();
-        void cache_flush_entry(unsigned int block_num);
-        void cache_flush();
-        void cache_sync_entry(unsigned int block_num);
-        void cache_sync();
-        void cache_put(unsigned int block_num, data_node* dn);
-        data_node& cache_retrieve(unsigned int block_num, bool pinned);
-        void cache_done(unsigned int block_num, bool modified);
-        void cache_pin(unsigned int block_num);
-        void cache_unpin(unsigned int block_num);
-        void cache_modified(unsigned int block_num);
     };
 
     class trie_node
