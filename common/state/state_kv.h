@@ -40,6 +40,8 @@ namespace state
     public:
         block_offset_t block_offset_ = empty_block_offset;
 
+        block_offset(const block_offset_t& b) : block_offset_(b) {}
+
         static unsigned int offset_size();
         static unsigned int serialized_offset_to_block_num(const ByteArray& serialized_offset);
         static unsigned int serialized_offset_to_bytes(const ByteArray& serialized_offset);
@@ -109,6 +111,13 @@ namespace state
         trie_node_header_t hdr;
         block_offset_t next_offset;
         block_offset_t child_offset;
+    };
+    struct __attribute__((packed)) trie_node_h_with_ncc_t
+    {
+        trie_node_header_t hdr;
+        block_offset_t next_offset;
+        block_offset_t child_offset;
+        uint8_t key_chunk[MAX_KEY_CHUNK_BYTE_SIZE];
     };
 
     const trie_node_header_t deleted_trie_header = {1, 0, 0, 0, 0};
@@ -284,6 +293,13 @@ namespace state
     class trie_node
     {
     public:
+        trie_node_h_with_ncc_t node;
+        bool modified = false;
+        bool initialized = false;
+        block_offset location;
+
+        trie_node() : location(block_offset(empty_block_offset)) {}
+
         static block_offset_t* goto_next_offset(trie_node_header_t* header);
         static block_offset_t* goto_child_offset(trie_node_header_t* header);
         static uint8_t* goto_key_chunk(trie_node_header_t* header);
@@ -297,41 +313,37 @@ namespace state
             const uint8_t* key_chunk,
             size_t kc_length);
 
-        static void delete_trie_node(trie_node_header_t* header);
         static void delete_trie_node_childless(data_node_io& dn_io,
-            trie_node_header_t* header, block_offset& out_bo_new);
+            trie_node& node);
         static void update_trie_node_next(
             trie_node_header_t* header, const block_offset_t* bo_next);
         static void update_trie_node_child(
             trie_node_header_t* header, const block_offset_t* bo_child);
 
         static void do_operate_trie_child(data_node_io& dn_io,
-            trie_node_header_t* trie_node_header,
+            trie_node& node,
             const kv_operation_e operation,
             const unsigned int depth,
             const ByteArray& kvkey,
             const ByteArray& in_value,
-            ByteArray& value,
-            block_offset& outBlockOffset);
+            ByteArray& value);
         static void do_operate_trie_next(data_node_io& dn_io,
-            trie_node_header_t* trie_node_header,
+            trie_node& node,
             const kv_operation_e operation,
             const unsigned int depth,
             const ByteArray& kvkey,
             const ByteArray& in_value,
-            ByteArray& value,
-            block_offset& outBlockOffset);
+            ByteArray& value);
 
         static void do_write_value(data_node_io& dn_io,
-            trie_node_header_t* header,
-            const ByteArray& value,
-            block_offset& outBlockOffset);
+            trie_node& node,
+            const ByteArray& value);
         static void do_read_value(
-            data_node_io& dn_io, trie_node_header_t* trie_node_header, ByteArray& value);
-        static void do_delete_value(data_node_io& dn_io, trie_node_header_t* header);
+            data_node_io& dn_io, const trie_node& node, ByteArray& value);
+        static void do_delete_value(data_node_io& dn_io, trie_node& node);
 
         static void do_split_trie_node(
-            data_node_io& dn_io, trie_node_header_t* header, unsigned int spl);
+            data_node_io& dn_io, trie_node& node, unsigned int spl);
         static size_t new_trie_node_size();
 
         static trie_node_header_t* append_trie_node(data_node_io& dn_io,
@@ -340,14 +352,17 @@ namespace state
             const unsigned int key_end,
             block_offset& outBlockOffset);
 
+        static void create_node(const ByteArray& key, unsigned int keyChunkBegin, unsigned int keyChunkEnd, trie_node& out_node);
+        static void read_trie_node(data_node_io& dn_io, block_offset_t& in_block_offset, trie_node& out_trie_node);
+        static void write_trie_node(data_node_io& dn_io, trie_node& in_trie_node);
+
         static void operate_trie(data_node_io& dn_io,
-            trie_node_header_t* trie_node_header,
+            trie_node& node,
             const kv_operation_e operation,
             const unsigned int depth,
             const ByteArray& kvkey,
             const ByteArray& in_value,
-            ByteArray& value,
-            block_offset& outBlockOffset);
+            ByteArray& value);
         static void init_trie_root(data_node_io& dn_io);
         static void operate_trie_root(data_node_io& dn_io,
             const kv_operation_e operation,
