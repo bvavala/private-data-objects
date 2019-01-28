@@ -20,6 +20,9 @@
 #include "basic_kv.h"
 #include "types.h"
 
+#define FIXED_DATA_NODE_BYTE_SIZE (1 << 13)  // 8 KB
+#define CACHE_SIZE (1 << 22)                 // 4 MB
+
 namespace pdo
 {
 namespace state
