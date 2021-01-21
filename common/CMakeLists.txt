@@ -29,14 +29,11 @@ FILE(GLOB PROJECT_SOURCES *.cpp cdi/*.cpp packages/base64/*.cpp packages/parson/
 SET(COMMON_PRIVATE_INCLUDE_DIRS "." "tests" "cdi" "crypto" "crypto/verify_ias_report" "packages/base64" "packages/parson" "state")
 SET(COMMON_CXX_FLAGS ${DEBUG_FLAGS} "-m64" "-fvisibility=hidden" "-fpie" "-fPIC" "-fstack-protector" "-std=c++11" "-Wall")
 
-SET(U_CRYPTO_LIB_NAME updo-crypto)
-SET(T_CRYPTO_LIB_NAME tpdo-crypto)
 
 ################################################################################
 # Untrusted Common Library
 ################################################################################
 
-SET(UNTRUSTED_LIB_NAME updo-common)
 PROJECT(${UNTRUSTED_LIB_NAME} CXX)
 
 pkg_check_modules (OPENSSL REQUIRED openssl>=1.1.0g)
@@ -54,7 +51,6 @@ TARGET_COMPILE_DEFINITIONS(${UNTRUSTED_LIB_NAME} PRIVATE "-D_UNTRUSTED_=1")
 # Block Store Library
 ################################################################################
 
-SET(BLOCK_STORE_LIB_NAME updo-lmdb-block-store)
 PROJECT(${BLOCK_STORE_LIB_NAME} CXX)
 
 ADD_LIBRARY(${BLOCK_STORE_LIB_NAME} STATIC packages/block_store/lmdb_block_store.cpp)
@@ -75,7 +71,6 @@ endif()
 ################################################################################
 
 if(NOT UNTRUSTED_ONLY)
-	SET(TRUSTED_LIB_NAME tpdo-common)
 	PROJECT(${TRUSTED_LIB_NAME} CXX)
 
 	ADD_LIBRARY(${TRUSTED_LIB_NAME} STATIC ${PROJECT_HEADERS} ${PROJECT_GENERATED_IAS_SOURCES} ${PROJECT_SOURCES})

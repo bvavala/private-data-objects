@@ -12,6 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+CMAKE_MINIMUM_REQUIRED(VERSION 3.2 FATAL_ERROR)
+include (../../CMakeVariables.txt)
+SET(PDO_TOP_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../")
+message(" pdo top dir is ${PDO_TOP_DIR}")
+link_directories("${PDO_TOP_DIR}/common/build" "${PDO_TOP_DIR}/common/tests/crypto/intel-ipsec-mb/lib" )
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules (OPENSSL REQUIRED openssl>=1.1.0g)
+
 # Put test artifacts under /tests subdirectory
 set(TESTS_OUTPUT_DIR ${CMAKE_BINARY_DIR}/tests)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${TESTS_OUTPUT_DIR})
@@ -38,6 +47,8 @@ TARGET_INCLUDE_DIRECTORIES(${UNTRUSTED_TEST_NAME} PRIVATE ${PDO_TOP_DIR}/common/
 TARGET_INCLUDE_DIRECTORIES(${UNTRUSTED_TEST_NAME} PRIVATE ${PDO_TOP_DIR}/common/tests/crypto)
 TARGET_INCLUDE_DIRECTORIES(${UNTRUSTED_TEST_NAME} PRIVATE ${PDO_TOP_DIR}/common/packages/base64)
 
+TARGET_INCLUDE_DIRECTORIES(${UNTRUSTED_TEST_NAME} PRIVATE ${PDO_TOP_DIR}/common/tests/crypto/intel-ipsec-mb/lib)
+
 TARGET_COMPILE_OPTIONS(${UNTRUSTED_TEST_NAME} PRIVATE ${COMMON_CXX_FLAGS})
 
 # critical flag for conditional compile in test crypto sources
@@ -47,6 +58,8 @@ TARGET_COMPILE_DEFINITIONS(${UNTRUSTED_TEST_NAME} PRIVATE ${IAS_CA_CERT_REQUIRED
 
 # Link the untrusted test application against the untrusted library and openssl
 TARGET_LINK_LIBRARIES(${UNTRUSTED_TEST_NAME} "-Wl,--start-group" ${UNTRUSTED_LIB_NAME} ${OPENSSL_LDFLAGS} ${U_CRYPTO_LIB_NAME} "-Wl,--end-group")
+
+TARGET_LINK_LIBRARIES(${UNTRUSTED_TEST_NAME} "IPSec_MB")
 
 # Register this application as a test
 add_test(
@@ -77,6 +90,8 @@ if(NOT UNTRUSTED_ONLY)
 
 	TARGET_INCLUDE_DIRECTORIES(${TRUSTED_TEST_NAME} PUBLIC ${SGX_SDK}/include)
 	TARGET_INCLUDE_DIRECTORIES(${TRUSTED_TEST_NAME} PRIVATE ${PDO_TOP_DIR}/common)
+
+    #TARGET_INCLUDE_DIRECTORIES(${TRUSTED_TEST_NAME} PRIVATE ${PDO_TOP_DIR}/common/tests/crypto/intel-ipsec-mb/lib)
 
 	TARGET_COMPILE_OPTIONS(${TRUSTED_TEST_NAME} PRIVATE ${COMMON_CXX_FLAGS})
 

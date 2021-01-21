@@ -27,3 +27,41 @@ int test()
 {
     return pdo::crypto::testCrypto();
 }
+
+extern int tc_posix_memalign(void **,size_t,size_t);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int posix_memalign(void **memptr, size_t alignment, size_t size)
+{
+    void *p = memalign(alignment, size);
+    if(!p)
+        return 1;
+
+    *memptr = p;
+    return 0;
+    //return tc_posix_memalign(memptr,alignment,size);
+}
+
+void __assert_fail(const char * assertion, const char * file, unsigned int line, const char * function)
+{
+    int n= 1;
+    return;
+}
+
+int printf ( const char * format, ... )
+{
+    return 1;
+}
+
+
+int __printf_chk(int flag, const char * format)
+{
+    return 1;
+}
+
+#ifdef __cplusplus
+}
+#endif

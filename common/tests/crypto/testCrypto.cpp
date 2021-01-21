@@ -40,6 +40,8 @@ namespace constants = pdo::crypto::constants;
 // Error handling
 namespace Error = pdo::error;
 
+int test_edgecrypt();
+
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 int pcrypto::testCrypto()
 {
@@ -1035,8 +1037,461 @@ d4poyb6IW8KCJbxfMJvkordNOgOUUxndPHEi/tb/U7uLjLOgPA==
     }
 
     // all tests successful
+
+    test_edgecrypt();
+
     return 0;
 
 err:
     return -1;
 } //int pcrypto::testVerifyReport()
+
+/**************************************************************************************
+ 
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ * ***********************************************************************************/
+
+#include <intel-ipsec-mb.h>
+
+IMB_MGR *p_gcm_mgr = NULL;
+
+static void
+aes_gcm_enc_128(const struct gcm_key_data *key,
+                struct gcm_context_data *ctx,
+                uint8_t *out, const uint8_t *in, uint64_t len,
+                const uint8_t *iv, const uint64_t iv_len,
+                const uint8_t *aad, uint64_t aad_len,
+                uint8_t *auth_tag, uint64_t auth_tag_len)
+{
+        if (iv_len == 12) {
+                IMB_AES128_GCM_ENC(p_gcm_mgr, key, ctx, out, in, len, iv,
+                                   aad, aad_len, auth_tag, auth_tag_len);
+        } else {
+            SAFE_LOG(PDO_LOG_DEBUG, "wrong len IV\n");
+                //IMB_AES128_GCM_INIT_VAR_IV(p_gcm_mgr, key, ctx, iv, iv_len,
+                //                           aad, aad_len);
+                //IMB_AES128_GCM_ENC_UPDATE(p_gcm_mgr, key, ctx, out, in, len);
+                //IMB_AES128_GCM_ENC_FINALIZE(p_gcm_mgr, key, ctx,
+                //                            auth_tag, auth_tag_len);
+        }
+}
+
+static void
+aes_gcm_dec_128(const struct gcm_key_data *key,
+                struct gcm_context_data *ctx,
+                uint8_t *out, const uint8_t *in, uint64_t len,
+                const uint8_t *iv, const uint64_t iv_len,
+                const uint8_t *aad, uint64_t aad_len,
+                uint8_t *auth_tag, uint64_t auth_tag_len)
+{
+        if (iv_len == 12) {
+                IMB_AES128_GCM_DEC(p_gcm_mgr, key, ctx, out, in, len, iv,
+                                   aad, aad_len, auth_tag, auth_tag_len);
+        } else {
+            SAFE_LOG(PDO_LOG_DEBUG, "wrong len IV\n");
+                //IMB_AES128_GCM_INIT_VAR_IV(p_gcm_mgr, key, ctx, iv, iv_len,
+                //                           aad, aad_len);
+                //IMB_AES128_GCM_DEC_UPDATE(p_gcm_mgr, key, ctx, out, in, len);
+                //IMB_AES128_GCM_DEC_FINALIZE(p_gcm_mgr, key, ctx,
+                //                            auth_tag, auth_tag_len);
+        }
+}
+
+ByteArray g_ba_cypher_text;
+void set_cyphertext(unsigned int msg_size)
+{
+    ByteArray ba_key(constants::SYM_KEY_LEN, 0);
+    ByteArray ba_iv(constants::IV_LEN, 0);
+    ByteArray ba_msg(msg_size,0);
+
+    g_ba_cypher_text = pcrypto::skenc::EncryptMessage(ba_key, ba_iv, ba_msg);
+}
+
+void get_cyphertext(uint8_t* buffer, uint32_t buffer_size, uint32_t* ct_size)
+{
+    if(buffer_size < g_ba_cypher_text.size())
+    {
+        *ct_size = 0;
+        return;
+    }
+
+    memcpy(buffer, g_ba_cypher_text.data(), g_ba_cypher_text.size());
+    *ct_size = g_ba_cypher_text.size();
+    return;
+}
+
+void get_cyphertext_pointer(uint8_t** ct_pointer, uint32_t* ct_size)
+{
+    *ct_pointer = g_ba_cypher_text.data();
+    *ct_size = g_ba_cypher_text.size();
+    return;
+}
+
+static __inline__ unsigned long long rdtsc(void)
+{
+    unsigned hi, lo;
+    __asm__ __volatile ("lfence");
+    __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
+    __asm__ __volatile ("lfence");
+    return ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
+}
+
+int test_edgecrypt()
+{
+    SAFE_LOG(PDO_LOG_DEBUG, "Test edgecrypt");
+
+    uint32_t msg_size = 1 << 13;
+    unsigned int reps = (1 << 25) / msg_size; 
+    ByteArray ba_cypher_text;
+    ByteArray ba_key(constants::SYM_KEY_LEN, 0);
+    ByteArray ba_iv(constants::IV_LEN, 0);
+    ByteArray ba_msg(msg_size,0);
+
+    ba_cypher_text = pcrypto::skenc::EncryptMessage(ba_key, ba_iv, ba_msg);
+    SAFE_LOG(PDO_LOG_DEBUG, "cyphertext(%d): %s", ba_cypher_text.size(), ByteArrayToHexEncodedString(ba_cypher_text).c_str());
+
+    p_gcm_mgr = alloc_mb_mgr(0);
+    if(p_gcm_mgr == NULL)
+    {
+        SAFE_LOG(PDO_LOG_DEBUG, "error alloc gcm mgr");
+        return -1;
+    }
+
+    init_mb_mgr_avx2(p_gcm_mgr);
+
+    struct gcm_key_data gdata_key;
+    struct gcm_context_data gdata_ctx;
+    
+    SAFE_LOG(PDO_LOG_DEBUG, "mgr %p gcm128_pre %p key %p gdatakey %p\n", p_gcm_mgr, p_gcm_mgr->gcm128_pre, ba_key.data(), &gdata_key);
+
+
+    ByteArray ba_ct(msg_size, 1);;
+    ByteArray ba_tag(constants::TAG_LEN,0);
+    IMB_AES128_GCM_PRE(p_gcm_mgr, ba_key.data(), &gdata_key);
+    aes_gcm_enc_128(
+            &gdata_key,
+            &gdata_ctx,
+            ba_ct.data(),
+            ba_msg.data(),
+            ba_msg.size(),
+            ba_iv.data(),
+            ba_iv.size(),
+            NULL,
+            0,
+            ba_tag.data(),
+            ba_tag.size()
+            );
+
+
+    SAFE_LOG(PDO_LOG_DEBUG, "cyphertext(%d): %s\n", ba_ct.size(), ByteArrayToHexEncodedString(ba_ct).c_str());
+    SAFE_LOG(PDO_LOG_DEBUG, "tag: %s\n", ByteArrayToHexEncodedString(ba_tag).c_str());
+
+    unsigned long long start, end;
+
+    start = rdtsc();
+    for(unsigned int i=0; i<2000000000; i++);
+    end = rdtsc();
+    SAFE_LOG(PDO_LOG_DEBUG, "check increment time: %llu\n", end-start);
+
+
+    unsigned int j=0;
+    start = rdtsc();
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    j++;
+    end = rdtsc();
+    SAFE_LOG(PDO_LOG_DEBUG, "check increment time: %llu\n", end-start);
+
+    SAFE_LOG(PDO_LOG_DEBUG, "msg_size %u reps %u\n", msg_size, reps);
+
+    SAFE_LOG(PDO_LOG_DEBUG, "pdoenc\n");
+    start = rdtsc();
+    for(unsigned int i=0; i<reps; i++)
+        ba_cypher_text = pcrypto::skenc::EncryptMessage(ba_key, ba_iv, ba_msg);
+    end = rdtsc();
+    SAFE_LOG(PDO_LOG_DEBUG, "time: %llu\n", end-start);
+
+    SAFE_LOG(PDO_LOG_DEBUG, "pdoenc 3s\n");
+    unsigned int ops = 0;
+    start = rdtsc();
+    end = start + (3* 3000000000);
+    while(rdtsc() < end)
+    {
+        ba_cypher_text = pcrypto::skenc::EncryptMessage(ba_key, ba_iv, ba_msg);
+        ops ++;
+    }
+    end = rdtsc();
+    SAFE_LOG(PDO_LOG_DEBUG, "time: %llu\n", end-start);
+    SAFE_LOG(PDO_LOG_DEBUG, "ops: %llu\n", ops);
+
+    SAFE_LOG(PDO_LOG_DEBUG, "aesgcm\n");
+    start = rdtsc();
+    for(unsigned int i=0; i<reps; i++)
+        aes_gcm_enc_128(
+            &gdata_key,
+            &gdata_ctx,
+            ba_ct.data(),
+            ba_msg.data(),
+            ba_msg.size(),
+            ba_iv.data(),
+            ba_iv.size(),
+            NULL,
+            0,
+            ba_tag.data(),
+            ba_tag.size()
+            );
+    end = rdtsc();
+    SAFE_LOG(PDO_LOG_DEBUG, "time: %llu\n", end-start);
+
+    SAFE_LOG(PDO_LOG_DEBUG, "aesgcm 3s\n");
+    ops = 0;
+    start = rdtsc();
+    end = start + (3* 3000000000);
+    while(rdtsc() < end)
+    {
+        aes_gcm_enc_128(
+            &gdata_key,
+            &gdata_ctx,
+            ba_ct.data(),
+            ba_msg.data(),
+            ba_msg.size(),
+            ba_iv.data(),
+            ba_iv.size(),
+            NULL,
+            0,
+            ba_tag.data(),
+            ba_tag.size()
+            );
+        ops++;
+    }
+    end = rdtsc();
+    SAFE_LOG(PDO_LOG_DEBUG, "time: %llu\n", end-start);
+    SAFE_LOG(PDO_LOG_DEBUG, "ops: %llu\n", ops);
+
+    SAFE_LOG(PDO_LOG_DEBUG, "sseenc\n");
+    init_mb_mgr_sse(p_gcm_mgr);
+    IMB_AES128_GCM_PRE(p_gcm_mgr, ba_key.data(), &gdata_key);
+    start = rdtsc();
+    for(unsigned int i=0; i<reps; i++)
+        aes_gcm_enc_128(
+            &gdata_key,
+            &gdata_ctx,
+            ba_ct.data(),
+            ba_msg.data(),
+            ba_msg.size(),
+            ba_iv.data(),
+            ba_iv.size(),
+            NULL,
+            0,
+            ba_tag.data(),
+            ba_tag.size()
+            );
+    end = rdtsc();
+    SAFE_LOG(PDO_LOG_DEBUG, "time: %llu\n", end-start);
+
+    SAFE_LOG(PDO_LOG_DEBUG, "avx\n");
+    init_mb_mgr_avx(p_gcm_mgr);
+    IMB_AES128_GCM_PRE(p_gcm_mgr, ba_key.data(), &gdata_key);
+    start = rdtsc();
+    for(unsigned int i=0; i<reps; i++)
+        aes_gcm_enc_128(
+            &gdata_key,
+            &gdata_ctx,
+            ba_ct.data(),
+            ba_msg.data(),
+            ba_msg.size(),
+            ba_iv.data(),
+            ba_iv.size(),
+            NULL,
+            0,
+            ba_tag.data(),
+            ba_tag.size()
+            );
+    end = rdtsc();
+    SAFE_LOG(PDO_LOG_DEBUG, "time: %llu\n", end-start);
+
+    SAFE_LOG(PDO_LOG_DEBUG, "aesnioffenc\n");
+    p_gcm_mgr = alloc_mb_mgr(0 | IMB_FLAG_AESNI_OFF);
+    init_mb_mgr_sse(p_gcm_mgr);
+    IMB_AES128_GCM_PRE(p_gcm_mgr, ba_key.data(), &gdata_key);
+    start = rdtsc();
+    for(unsigned int i=0; i<reps; i++)
+        aes_gcm_enc_128(
+            &gdata_key,
+            &gdata_ctx,
+            ba_ct.data(),
+            ba_msg.data(),
+            ba_msg.size(),
+            ba_iv.data(),
+            ba_iv.size(),
+            NULL,
+            0,
+            ba_tag.data(),
+            ba_tag.size()
+            );
+    end = rdtsc();
+    SAFE_LOG(PDO_LOG_DEBUG, "time: %llu\n", end-start);
+
+    // set ct somewhere
+    set_cyphertext(msg_size);
+
+    SAFE_LOG(PDO_LOG_DEBUG, "getcyphertext and avx2dec\n");
+    p_gcm_mgr = alloc_mb_mgr(0);
+    init_mb_mgr_avx2(p_gcm_mgr);
+    IMB_AES128_GCM_PRE(p_gcm_mgr, ba_key.data(), &gdata_key);
+    uint32_t buffer_size = constants::TAG_LEN + msg_size;
+    uint8_t buffer[buffer_size];
+    uint32_t ct_size;
+    start = rdtsc();
+    for(unsigned int i=0; i<reps; i++)
+    {
+        get_cyphertext(buffer, buffer_size, &ct_size);
+        aes_gcm_enc_128(
+                &gdata_key,
+                &gdata_ctx,
+                buffer + constants::TAG_LEN,
+                ba_msg.data(),
+                ba_msg.size(),
+                ba_iv.data(),
+                ba_iv.size(),
+                NULL,
+                0,
+                buffer,
+                constants::TAG_LEN
+                );
+        //memset(buffer, '\0', buffer_size);
+    }
+    end = rdtsc();
+    SAFE_LOG(PDO_LOG_DEBUG, "time: %llu\n", end-start);
+
+    SAFE_LOG(PDO_LOG_DEBUG, "getcyphertextpointer and avx2dec\n");
+
+    uint8_t* ct_pointer;
+    start = rdtsc();
+    for(unsigned int i=0; i<reps; i++)
+    {
+        get_cyphertext_pointer(&ct_pointer, &ct_size);
+        aes_gcm_enc_128(
+                &gdata_key,
+                &gdata_ctx,
+                ct_pointer + constants::TAG_LEN,
+                ba_msg.data(),
+                ba_msg.size(),
+                ba_iv.data(),
+                ba_iv.size(),
+                NULL,
+                0,
+                ct_pointer,
+                constants::TAG_LEN
+                );
+    }
+    end = rdtsc();
+    SAFE_LOG(PDO_LOG_DEBUG, "time: %llu\n", end-start);
+
+    return 0;
+}
