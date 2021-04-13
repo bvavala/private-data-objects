@@ -37,6 +37,8 @@ IF (NOT DEFINED ENV{WASI_SDK_DIR})
   SET(WASI_SDK_DIR "/opt/wasi-sdk")
 ELSE()
   SET(WASI_SDK_DIR "$ENV{WASI_SDK_DIR}")
+  INCLUDE_DIRECTORIES(${WASI_SDK_DIR}/share/wasi-sysroot/include/) #at least for "malloc.h"
+  INCLUDE_DIRECTORIES(${WASI_SDK_DIR}/share/wasi-sysroot/include/c++/v1/) #at least for "new"
 ENDIF()
 
 # ---------------------------------------------

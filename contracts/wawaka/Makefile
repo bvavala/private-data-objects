@@ -78,8 +78,20 @@ install : build
 	@echo install contracts
 	@cd build && make install
 
+
+ifndef WASI_SDK_DIR
+WASI_SDK_DIR_DEFINE:=
+COMPILER_WORKS_DEFINE:=
+else
+WASI_SDK_DIR_DEFINE:=-DWASI_SDK_DIR=${WASI_SDK_DIR}
+COMPILER_WORKS_DEFINE:=-DCMAKE_C_COMPILER_WORKS=TRUE -DCMAKE_CXX_COMPILER_WORKS=TRUE
+endif
+
 build :
 	mkdir -p $@
-	cd $@ && cmake .. -DCMAKE_TOOLCHAIN_FILE=$(WAMR_TOOLCHAIN)
+	cd $@ && cmake .. \
+		${WASI_SDK_DIR_DEFINE} \
+		-DCMAKE_TOOLCHAIN_FILE=$(WAMR_TOOLCHAIN) \
+		${COMPILER_WORKS_DEFINE}
 
 .PHONY : all clean debug install test
