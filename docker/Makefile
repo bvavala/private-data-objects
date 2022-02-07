@@ -114,7 +114,7 @@ test-with-no-build: test-env-setup-with-no-build
 	fi
 	# - run automated tests
 	$(DOCKER_COMPOSE_COMMAND) $(DOCKER_COMPOSE_OPTS_STL) \
-	   exec -T pdo-build bash -i -c /project/pdo/src/private-data-objects/build/__tools__/run-tests.sh
+	   exec -T pdo-build bash -i -c "source /project/pdo/src/private-data-objects/build/common-config.sh && /project/pdo/src/private-data-objects/build/__tools__/run-tests.sh"
 	# - teardown
 	$(DOCKER_COMPOSE_COMMAND) $(DOCKER_COMPOSE_OPTS_STL) down
 
