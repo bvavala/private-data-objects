@@ -81,7 +81,7 @@ pdo-composition-ccf: pdo-dev-image
 
 test-stl: pdo-composition test-with-no-build
 test-ccf: pdo-composition-ccf test-with-no-build-ccf
-test: test-stl test-ccf
+test: test-ccf
 
 test-env-setup: pdo-composition test-env-setup-with-no-build
 test-env-setup-ccf: pdo-composition-ccf test-env-setup-with-no-build-ccf
