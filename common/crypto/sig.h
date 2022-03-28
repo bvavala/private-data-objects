@@ -21,7 +21,7 @@
 #include <map>
 
 #ifndef PDO_DEFAULT_SIGCURVE
-#define PDO_DEFAULT_SIGCURVE SECP256K1
+#define PDO_DEFAULT_SIGCURVE SECP384R1
 #endif
 
 namespace pdo
