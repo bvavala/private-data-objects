@@ -41,11 +41,12 @@ SET(GENERIC_CXX_FLAGS ${DEBUG_FLAGS} "-Wall" "-fPIC" "-Wno-write-strings" "-std=
 # Package headers compiled from scheme
 ################################################################################
 SET(GIPSY_PACKAGE_SRC "packages/init-package.scm" "packages/catch-package.scm" "packages/oops-package.scm" "packages/dispatch-package.scm")
-ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/packages/package.h
-                   COMMAND packages/build-init-package.sh
-                   ARGS --package "packages/package" -- ${GIPSY_PACKAGE_SRC}
-                   DEPENDS ${GIPSY_PACKAGE_SRC}
-                   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+#package.scm and package.h are now checked into the repo.The following custom command is no longer necessary.
+#ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/packages/package.h
+#                   COMMAND packages/build-init-package.sh
+#                   ARGS --package "packages/package" -- ${GIPSY_PACKAGE_SRC}
+#                   DEPENDS ${GIPSY_PACKAGE_SRC}
+#                   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 set_property(SOURCE GipsyInterpreter.cpp APPEND PROPERTY OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/packages/package.h)
 
