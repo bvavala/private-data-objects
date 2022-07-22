@@ -43,7 +43,11 @@ Please follow instructions at https://microsoft.github.io/CCF/release/1.x/build_
 Please set `CCF_BASE` to `/opt/ccf. For installing dependencies, download the CCF repo, change branch to ccf-1.0.19 and execute the following commands:
 
 ```bash
+git clone https://github.com/microsoft/CCF.git
+cd CCF/
+git checkout ccf-1.0.19
 cd getting_started/setup_vm/
+sed -i '2s/.*/ccf_ver: "1.0.19"/' roles/ccf_install/vars/tmp.yml
 ./run.sh app-dev.yml
 ```
 

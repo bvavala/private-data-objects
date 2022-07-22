@@ -101,7 +101,7 @@ def Main() :
         config = toml.load(options.ccf_config)
     except :
         LOG.error('unable to load ccf configuration file {0}'.format(options.ccf_config))
-        pass
+        sys.exit(-1)
 
     member_cert = os.path.join(CCF_Keys, "{}_cert.pem".format(options.member_name))
     member_key = os.path.join(CCF_Keys, "{}_privk.pem".format(options.member_name))
