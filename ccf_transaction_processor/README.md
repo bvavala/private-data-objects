@@ -47,19 +47,9 @@ git clone https://github.com/microsoft/CCF.git
 cd CCF/
 git checkout ccf-1.0.19
 cd getting_started/setup_vm/
-sed -i '2s/.*/ccf_ver: "1.0.19"/' roles/ccf_install/vars/tmp.yml
+sed -i '2s/.*/ccf_ver: "1.0.19"/' roles/ccf_install/vars/common.yml
 ./run.sh app-dev.yml
 ```
-
-The above command may throw an error message suggesting that CCF installation failed; if so, please ignore this error message. 
-
-Install CCF 1.0.19 via debian package
-```bash
-export CCF_VERSION=1.0.19
-wget https://github.com/microsoft/CCF/releases/download/ccf-${CCF_VERSION}/ccf_${CCF_VERSION}_amd64.deb
-$ sudo apt install ./ccf_${CCF_VERSION}_amd64.deb
-```
-
 Note that CCF needs to be installed only on the machine where PDO TP
 is being installed. CCF is not required by PDO clients to use a CCF based PDO TP.
 
