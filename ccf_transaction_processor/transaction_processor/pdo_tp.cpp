@@ -142,8 +142,8 @@ namespace ccfapp
             if (proof_data.empty()) {
                 // Enclave proof data is empty - simulation mode
             }else{
-                return ccf::make_error(
-                    HTTP_STATUS_BAD_REQUEST, ccf::errors::InvalidInput, "Only simulation mode is currently supported");
+                //return ccf::make_error(
+                //    HTTP_STATUS_BAD_REQUEST, ccf::errors::InvalidInput, "Only simulation mode is currently supported");
             }
 
             // collect the enclave data to be stored
