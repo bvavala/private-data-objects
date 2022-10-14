@@ -142,8 +142,14 @@ namespace ccfapp
             if (proof_data.empty()) {
                 // Enclave proof data is empty - simulation mode
             }else{
-                return ccf::make_error(
-                    HTTP_STATUS_BAD_REQUEST, ccf::errors::InvalidInput, "Only simulation mode is currently supported");
+                // WARNING:WARNING:WARNING:WARNING:WARNING:WARNING:WARNING:WARNING:WARNING:
+                // WARNING:WARNING:WARNING:WARNING:WARNING:WARNING:WARNING:WARNING:WARNING:
+                // WARNING:WARNING:WARNING:WARNING:WARNING:WARNING:WARNING:WARNING:WARNING:
+                // Temporary change to support non-empty proof-data coming from hardware mode
+                // The signature check below is skipped as the serialization of proof-data is not correct.
+                // TODO: fix
+                //return ccf::make_error(
+                //    HTTP_STATUS_BAD_REQUEST, ccf::errors::InvalidInput, "Only simulation mode is currently supported");
             }
 
             // collect the enclave data to be stored
@@ -162,10 +168,12 @@ namespace ccfapp
                     HTTP_STATUS_BAD_REQUEST, ccf::errors::InvalidInput, "Enclave registration data is incomplete");
             }
 
-            // Verify Pdo transaction signature
-            if (!verify_pdo_transaction_signature_register_enclave(in.signature, in.EHS_verifying_key, new_enclave)){
-                return ccf::make_error(
-                    HTTP_STATUS_BAD_REQUEST, ccf::errors::InvalidInput, "Invalid PDO payload signature");
+            if (proof_data.empty()) { // WARNING: signature check only performed in sim mode (with empty proof data) TODO: fix
+                // Verify Pdo transaction signature
+                if (!verify_pdo_transaction_signature_register_enclave(in.signature, in.EHS_verifying_key, new_enclave)){
+                    return ccf::make_error(
+                        HTTP_STATUS_BAD_REQUEST, ccf::errors::InvalidInput, "Invalid PDO payload signature");
+                }
             }
 
             //store the data in the KV store

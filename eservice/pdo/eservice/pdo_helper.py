@@ -308,6 +308,9 @@ class Enclave(object) :
 
             submitter = create_submitter(ledger_config, pdo_signer = self.txn_keys)
 
+            if self.proof_data != "" and ledger_config.get('LedgerType', "none") == "ccf":
+                logger.warning("WARNING: CCF currently does not verify any signature with non-empty proof-data (in SGX HW mode)")
+
             txnsignature = submitter.register_encalve(
                 self.verifying_key,
                 self.encryption_key,

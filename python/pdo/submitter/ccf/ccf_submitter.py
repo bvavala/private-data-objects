@@ -297,6 +297,15 @@ class CCFSubmitter(sub.Submitter):
 
         enclave_info = self.ccf_client.submit_read_request(tx_method, tx_params)
 
+        logger.warning("WARNING:CCF PDO in HW mode: get enclave info")
+        return enclave_info
+
+        if enclave_info["proof_data"] != "":
+            logger.warning("WARNING:CCF PDO in HW mode, temporary change")
+            logger.warning("WARNING: skipping ledger signature verification (not working)")
+            # TODO fix signature and verification
+            return enclave_info
+
         # verify ccf signature
         message = enclave_info["verifying_key"]
         message+= enclave_info["encryption_key"]
@@ -467,7 +476,7 @@ class PayloadBuilder(object):
         payloadblob['encryption_key'] = encryption_key
         payloadblob['proof_data'] = proof_data
         if proof_data:
-            payloadblob['enclave_persistent_id'] = get_epid_pseudonym_from_proof_data(proof_data)
+            payloadblob['enclave_persistent_id'] = sub.get_epid_pseudonym_from_proof_data(proof_data)
         else:
             payloadblob['enclave_persistent_id'] = "ignored field, no proof data"
         payloadblob['registration_block_context'] = registration_block_context
