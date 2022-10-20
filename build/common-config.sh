@@ -132,6 +132,13 @@ var_set() {
 	"
 	env_key_sort[$i]="PDO_ENCLAVE_CODE_SIGN_PEM"; i=$i+1; export PDO_ENCLAVE_CODE_SIGN_PEM=${env_val[PDO_ENCLAVE_CODE_SIGN_PEM]}
 
+    env_val[PDO_ATTESTATION_TYPE]="${PDO_ATTESTATION_TYPE:-$(cat ${PDO_SGX_KEY_ROOT}/sgx_attestation_type.txt)}"
+    env_desc[PDO_ATTESTATION_TYPE]="
+        PDO_ATTESTATION_TYPE indicates the type of attestation that will be used.
+        simulated in SIM mode; epid-linkable or dcap in HW mode.
+    "
+    env_key_sort[$i]="PDO_ATTESTATION_TYPE"; i=$i+1; export PDO_ATTESTATION_TYPE=${env_val[PDO_ATTESTATION_TYPE]}
+
 	env_val[PDO_SPID]="${PDO_SPID:-$(cat ${PDO_SGX_KEY_ROOT}/sgx_spid.txt)}"
 	env_desc[PDO_SPID]="
 		PDO_SPID is the ID that accompanies the certificate registered
@@ -231,6 +238,7 @@ do
 	    unset PDO_ENCLAVE_CODE_SIGN_PEM
 	    unset PDO_SPID
 	    unset PDO_SPID_API_KEY
+        unset PDO_ATTESTATION_TYPE
             ;;
         --evalable-export|-e)
 	    is_sourced=0
