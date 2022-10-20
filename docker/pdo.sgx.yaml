@@ -22,6 +22,7 @@
 # - sgx_spid.txt
 # - sgx_spid_api_key.txt
 # - sgx_ias_key.pem
+# - sgx_attestation_type.txt
 # See 'build/common-config -h' for information on the content of these files
 #
 # in the pdo-build shell (see ccf-pdo.yaml), before doing any operation

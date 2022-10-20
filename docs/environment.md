@@ -51,7 +51,7 @@ them to the environment.
 
 Passing parameter `--reset-keys` will unset key variables
 `PDO_ENCLAVE_CODE_SIGN_PEM`,
-`PDO_SPID` and `PDO_SPID_API_KEY` before setting variables.
+`PDO_SPID`, `PDO_SPID_API_KEY`, `PDO_ATTESTATION_TYPE` before setting variables.
 
 <!-- -------------------------------------------------- -->
 <!-- -------------------------------------------------- -->
@@ -195,6 +195,14 @@ If the variable is unset, the configuration script
 The default value will work for SGX simulation mode. See
 [SGX section](install.md#SGX) of the [BUILD document](install.md) for
 instructions to create the API key to support SGX hardware mode.
+
+### `PDO_ATTESTATION_TYPE`
+(default `simulated`)
+
+`PDO_ATTESTATION_TYPE` contains the type of attestation used by the eservice
+for the contract enclave.
+The default value is `simulated`, in SGX SIM mode.
+In SGX HW mode, the available types are `epid-linkable` and `dcap`.
 
 <!-- -------------------------------------------------- -->
 <!-- -------------------------------------------------- -->
