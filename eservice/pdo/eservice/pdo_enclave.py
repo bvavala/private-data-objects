@@ -152,7 +152,7 @@ def initialize_with_configuration(config) :
 
     num_of_enclaves = int(config.get('num_of_enclaves', 1))
 
-    _attestation_type = int(config.get('attestation_type', ""))
+    _attestation_type = config.get('attestation_type', "")
 
     if not _ias:
         _ias = \
