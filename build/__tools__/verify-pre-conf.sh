@@ -48,7 +48,7 @@ if [ "${SGX_MODE}" = "HW" ]; then
 	warn "PDO_SPID_API_KEY is not defined correctly, should be a a 32-byte hex key"
     fi
 
-    if [[ ! "${PDO_ATTESTATION_TYPE}" = "epid-linkable" ]] && [[ ! "${SGX_ATTESTATION_TYPE}" = "dcap" ]]; then
+    if [[ ! "${PDO_ATTESTATION_TYPE}" = "epid-linkable" ]] && [[ ! "${PDO_ATTESTATION_TYPE}" = "dcap" ]]; then
         die "PDO_ATTESTATION_TYPE=${PDO_ATTESTATION_TYPE} not defined epid-linkable or dcap in HW mode"
     fi
 fi
