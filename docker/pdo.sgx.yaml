@@ -49,4 +49,5 @@ services:
       - /var/run/aesmd:/var/run/aesmd
     devices:
       - ${SGX_DEVICE_PATH:-/dev/isgx}:${SGX_DEVICE_PATH:-/dev/isgx}
+      - ${SGX_PROVISION_DEVICE_PATH:-/dev/null}:${SGX_PROVISION_DEVICE_PATH:-/tmp/no_prov_device}
 

@@ -34,9 +34,10 @@ ifeq ($(SGX_ATTESTATION_TYPE),epid-linkable)
 endif
 ifeq ($(SGX_ATTESTATION_TYPE),dcap)
 	SGX_DEVICE_PATH=$(shell if [ -e "/dev/sgx_enclave" ]; then echo "/dev/sgx_enclave"; else echo "ERROR: NO SGX DEVICE FOUND"; fi)
+	SGX_PROVISION_DEVICE_PATH=$(shell if [ -e "/dev/sgx_provision" ]; then echo "/dev/sgx_provision"; else echo "ERROR: NO SGX PROV DEVICE FOUND"; fi)
 endif
 
-	DOCKER_COMPOSE_COMMAND := env SGX_DEVICE_PATH=${SGX_DEVICE_PATH} ${DOCKER_COMPOSE_COMMAND}
+	DOCKER_COMPOSE_COMMAND := env SGX_DEVICE_PATH=${SGX_DEVICE_PATH} env SGX_PROVISION_DEVICE_PATH=${SGX_PROVISION_DEVICE_PATH} ${DOCKER_COMPOSE_COMMAND}
 endif
 
 ifdef http_proxy
