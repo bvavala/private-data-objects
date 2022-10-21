@@ -25,10 +25,20 @@ DOCKER_COMPOSE_FILES_CCF += ccf-pdo.yaml ccf-pdo.local-code.yaml
 DOCKER_COMPOSE_FILES_CCF_ONLY += ccf.yaml ccf.local-code.yaml
 
 ifeq ($(SGX_MODE),HW)
-   DOCKER_COMPOSE_FILES_CCF += pdo.sgx.yaml
-   SGX_DEVICE_PATH=$(shell if [ -e "/dev/isgx" ]; then echo "/dev/isgx"; elif [ -e "/dev/sgx/enclave" ]; then echo "/dev/sgx/enclave"; else echo "ERROR: NO SGX DEVICE FOUND"; fi)
-   DOCKER_COMPOSE_COMMAND := env SGX_DEVICE_PATH=${SGX_DEVICE_PATH} ${DOCKER_COMPOSE_COMMAND}
+ 	DOCKER_COMPOSE_FILES_CCF += pdo.sgx.yaml
+
+	SGX_ATTESTATION_TYPE=$(shell if [ -e "./sgx/sgx_attestation_type.txt" ]; then cat "./sgx/sgx_attestation_type.txt"; fi)
+
+ifeq ($(SGX_ATTESTATION_TYPE),epid-linkable)
+	SGX_DEVICE_PATH=$(shell if [ -e "/dev/isgx" ]; then echo "/dev/isgx"; elif [ -e "/dev/sgx/enclave" ]; then echo "/dev/sgx/enclave"; else echo "ERROR: NO SGX DEVICE FOUND"; fi)
 endif
+ifeq ($(SGX_ATTESTATION_TYPE),dcap)
+	SGX_DEVICE_PATH=$(shell if [ -e "/dev/sgx_enclave" ]; then echo "/dev/sgx_enclave"; else echo "ERROR: NO SGX DEVICE FOUND"; fi)
+endif
+
+	DOCKER_COMPOSE_COMMAND := env SGX_DEVICE_PATH=${SGX_DEVICE_PATH} ${DOCKER_COMPOSE_COMMAND}
+endif
+
 ifdef http_proxy
    DO_PROXY = 1
 endif
