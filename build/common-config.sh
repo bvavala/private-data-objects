@@ -238,7 +238,7 @@ do
 	    unset PDO_ENCLAVE_CODE_SIGN_PEM
 	    unset PDO_SPID
 	    unset PDO_SPID_API_KEY
-        unset PDO_ATTESTATION_TYPE
+	    unset PDO_ATTESTATION_TYPE
             ;;
         --evalable-export|-e)
 	    is_sourced=0
