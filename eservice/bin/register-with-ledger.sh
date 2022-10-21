@@ -105,9 +105,13 @@ function Register {
 }
 
 if [ "$SGX_MODE" = "HW" ]; then
-    Store
-    DeriveIasPublicKey
-    Register
+    if [ "$PDO_ATTESTATION_TYPE" = "epid-linkable" ]; then
+        Store
+        DeriveIasPublicKey
+        Register
+    else
+        yell Registration failed! PDO_ATTESTATION_TYPE not set to epid-linkable
+    fi
 else
     yell Registration failed! SGX_MODE not set to HW
 fi
