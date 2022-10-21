@@ -154,6 +154,10 @@ RUN echo "deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu ${U
       #   is split into corresponding smaller libraries and header-files to make
       #   integration with DCAP easier and minimize pulling in unnecessary dependencies
 
+#Install SGX DCAP packages
+RUN apt-get install -y \
+    libsgx-dcap-ql
+
 # Install SGX SDK
 RUN mkdir -p /opt/intel
 WORKDIR /opt/intel
