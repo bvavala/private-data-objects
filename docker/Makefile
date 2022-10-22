@@ -32,9 +32,13 @@ ifeq ($(SGX_MODE),HW)
 ifeq ($(SGX_ATTESTATION_TYPE),epid-linkable)
 	SGX_DEVICE_PATH=$(shell if [ -e "/dev/isgx" ]; then echo "/dev/isgx"; elif [ -e "/dev/sgx/enclave" ]; then echo "/dev/sgx/enclave"; else echo "ERROR: NO SGX DEVICE FOUND"; fi)
 endif
+
 ifeq ($(SGX_ATTESTATION_TYPE),dcap)
 	SGX_DEVICE_PATH=$(shell if [ -e "/dev/sgx_enclave" ]; then echo "/dev/sgx_enclave"; else echo "ERROR: NO SGX DEVICE FOUND"; fi)
 	SGX_PROVISION_DEVICE_PATH=$(shell if [ -e "/dev/sgx_provision" ]; then echo "/dev/sgx_provision"; else echo "ERROR: NO SGX PROV DEVICE FOUND"; fi)
+	# set pccs url: grab from env, or assume it's in the local host listening on 8081
+	PCCS_HOSTPORT:=$(if $(PCCS_HOSTPORT),$(PCCS_HOSTPORT),$(shell hostname -A | cut -d" " -f1):8081)
+	DOCKER_BUILD_OPTS := ${DOCKER_BUILD_OPTS} --build-arg PCCS_HOSTPORT=${PCCS_HOSTPORT}
 endif
 
 	DOCKER_COMPOSE_COMMAND := env SGX_DEVICE_PATH=${SGX_DEVICE_PATH} env SGX_PROVISION_DEVICE_PATH=${SGX_PROVISION_DEVICE_PATH} ${DOCKER_COMPOSE_COMMAND}
