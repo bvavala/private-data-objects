@@ -110,7 +110,7 @@ test-env-setup-with-no-build-ccf:
 	# - configure
 	if [ "$(SGX_MODE)" = "HW" ]; then \
        $(DOCKER_COMPOSE_COMMAND) $(DOCKER_COMPOSE_OPTS_CCF) \
-		   exec -T pdo-build bash -c 'source /etc/bash.bashrc && export PDO_SGX_KEY_ROOT=/project/pdo/build/opt/pdo/etc/keys/sgx/ && unset PDO_SPID PDO_SPID_API_KEY PDO_HOSTNAME && source /project/pdo/src/private-data-objects/build/common-config.sh && make -C /project/pdo/src/private-data-objects/build force-conf register'; \
+		   exec -T pdo-build bash -c 'source /etc/bash.bashrc && export PDO_SGX_KEY_ROOT=/project/pdo/build/opt/pdo/etc/keys/sgx/ && unset PDO_SPID PDO_SPID_API_KEY PDO_HOSTNAME PDO_ATTESTATION_TYPE && source /project/pdo/src/private-data-objects/build/common-config.sh && make -C /project/pdo/src/private-data-objects/build force-conf register'; \
     fi
 
 test-with-no-build-ccf: test-env-setup-with-no-build-ccf
