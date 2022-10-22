@@ -154,7 +154,7 @@ def initialize_with_configuration(config) :
 
     _attestation_type = config.get('attestation_type', "")
 
-    if not _ias:
+    if not _ias and _attestation_type == "epid-linkable":
         _ias = \
             ias_client.IasClient(
                 IasServer = config['ias_url'],
@@ -173,15 +173,16 @@ def initialize_with_configuration(config) :
         logger.info("Basename: %s", get_enclave_basename())
         logger.info("MRENCLAVE: %s", get_enclave_measurement())
 
-    sig_rl_updated = False
-    while not sig_rl_updated:
-        try:
-            update_sig_rl()
-            sig_rl_updated = True
-        except (SSLError, Timeout, HTTPError) as e:
-            logger.warning("Failed to retrieve initial sig rl from IAS: %s", str(e))
-            logger.warning("Retrying in 60 sec")
-            time.sleep(60)
+    if _attestation_type == "epid-linkable":
+        sig_rl_updated = False
+        while not sig_rl_updated:
+            try:
+                update_sig_rl()
+                sig_rl_updated = True
+            except (SSLError, Timeout, HTTPError) as e:
+                logger.warning("Failed to retrieve initial sig rl from IAS: %s", str(e))
+                logger.warning("Retrying in 60 sec")
+                time.sleep(60)
 
 # -----------------------------------------------------------------
 # -----------------------------------------------------------------
@@ -275,9 +276,10 @@ def get_enclave_epid_group():
 # -----------------------------------------------------------------
 # -----------------------------------------------------------------
 def create_signup_info(originator_public_key_hash, nonce):
-    # Part of what is returned with the signup data is an enclave quote, we
-    # want to update the revocation list first.
-    update_sig_rl()
+    if _attestation_type == "epid-linkable":
+        # Part of what is returned with the signup data is an enclave quote, we
+        # want to update the revocation list first.
+        update_sig_rl()
 
     # Now, let the enclave create the signup data
     signup_data = enclave.create_enclave_data(originator_public_key_hash)
