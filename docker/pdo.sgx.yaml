@@ -33,7 +33,7 @@
 #    source /project/pdo/src/private-data-objects/build/common-config.sh
 #    make -C /project/pdo/src/private-data-objects/build conf register
 
-version: "2.1"
+version: "2.2"
 
 services:
 
@@ -44,6 +44,7 @@ services:
     build:
       args:
         SGX_MODE: HW
+      network: host
     volumes:
       - ${PDO_SGX_KEY_ROOT:-./sgx/}:/project/pdo/build/opt/pdo/etc/keys/sgx/
       - /var/run/aesmd:/var/run/aesmd
