@@ -157,7 +157,8 @@ RUN echo "deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu ${U
 #Install SGX DCAP packages
 RUN apt-get install -y \
     libsgx-dcap-ql \
-    libsgx-dcap-ql-dev
+    libsgx-dcap-ql-dev \
+    libsgx-dcap-default-qpl
 
 # Install SGX SDK
 RUN mkdir -p /opt/intel
