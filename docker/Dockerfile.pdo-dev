@@ -154,11 +154,14 @@ RUN echo "deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu ${U
       #   is split into corresponding smaller libraries and header-files to make
       #   integration with DCAP easier and minimize pulling in unnecessary dependencies
 
-#Install SGX DCAP packages
+# Install SGX DCAP packages
 RUN apt-get install -y \
     libsgx-dcap-ql \
     libsgx-dcap-ql-dev \
     libsgx-dcap-default-qpl
+
+# Disable certificate check for PCCS
+RUN sed -i "s/true/false/g" /etc/sgx_default_qcnl.conf
 
 # Install SGX SDK
 RUN mkdir -p /opt/intel
