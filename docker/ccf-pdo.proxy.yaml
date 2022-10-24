@@ -21,7 +21,7 @@
 # docker-compose installed in docker-compose versions in ubuntu 18.04. Later
 # versions, e.g., the one in 20.04, will honor that and will make this file obsolete ..
 
-version: "2.2"
+version: "2.1"
 
 services:
 

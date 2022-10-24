@@ -26,7 +26,7 @@
 # though only with docker version 18.09+ (look for --secret/--ssh parameters)
 
 
-version: "2.2"
+version: "2.1"
 
 services:
 

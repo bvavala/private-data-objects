@@ -35,7 +35,7 @@
 #   - for automated tests, you also just might call 'docker-compose  -f ccf-pdo.yaml exec pdo-build bash -i -c /project/pdo/src/private-data-objects/build/__tools__/run-tests.sh'
 # - ....
 
-version: "2.2"
+version: "2.1"
 
 services:
   # PDO EHS, PS and client ...

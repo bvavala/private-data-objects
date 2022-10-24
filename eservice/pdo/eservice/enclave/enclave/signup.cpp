@@ -185,7 +185,7 @@ pdo_err_t pdo::enclave_api::enclave_data::CreateEnclaveData(
     return result;
 } // pdo::enclave_api::base::CreateSignupData
 
-/// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 pdo_err_t pdo::enclave_api::enclave_data::UnsealEnclaveData(
     const Base64EncodedString& inSealedEnclaveData,
     StringArray& outPublicEnclaveData
