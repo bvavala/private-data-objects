@@ -242,7 +242,7 @@ def get_enclave_service_info(spid, attestation_type, config=None) :
     logger.debug("Attempting to load enclave at: %s", signed_enclave)
 
     num_of_enclaves = 1
-    pdo = enclave.pdo_enclave_info(signed_enclave, spid, attestations_type, num_of_enclaves)
+    pdo = enclave.pdo_enclave_info(signed_enclave, spid, attestation_type, num_of_enclaves)
     if pdo is None :
         raise Exception('unable to load the enclave')
 

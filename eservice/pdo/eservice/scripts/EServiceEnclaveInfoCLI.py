@@ -163,7 +163,7 @@ def Main() :
         spid = options.spid
 
     if options.attestation_type :
-        attestation-type = options.attestation_type
+        attestation_type = options.attestation_type
 
     global config_map
     config_map['identity'] = options.identity
