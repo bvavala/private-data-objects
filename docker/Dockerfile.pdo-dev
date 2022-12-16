@@ -166,7 +166,7 @@ RUN apt-get install -y \
 # Disable certificate check for PCCS
 RUN sed -i 's/"use_secure_cert": true/"use_secure_cert": false/' /etc/sgx_default_qcnl.conf
 # set the PCCS URL provided as input
-RUN sed -i 's/"pccs_url": ".*"/"pccs_url": "'${PCCS_URL}'"/' /etc/sgx_default_qcnl.conf
+RUN sed -i 's#"pccs_url": ".*"#"pccs_url": "'${PCCS_URL}'"#' /etc/sgx_default_qcnl.conf
 
 # Install SGX SDK
 RUN mkdir -p /opt/intel
