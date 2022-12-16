@@ -67,8 +67,7 @@ ARG SGX=2.15.1
 ARG OPENSSL=1.1.1g
 ARG SGXSSL=2.10_1.1.1g
 
-ARG PCCS_HOSTPORT=localhost:8081
-ENV PCCS_HOSTPORT=${PCCS_HOSTPORT}
+ENV PCCS_URL=${PCCS_URL}
 
 ARG ADD_APT_PKGS=
 
@@ -164,9 +163,9 @@ RUN apt-get install -y \
     libsgx-dcap-default-qpl
 
 # Disable certificate check for PCCS
-RUN sed -i "s/true/false/g" /etc/sgx_default_qcnl.conf
+RUN sed -i 's/"use_secure_cert": true/"use_secure_cert": false/' /etc/sgx_default_qcnl.conf
 # set the PCCS URL provided as input
-RUN sed -i "s/localhost:8081/${PCCS_HOSTPORT}/g" /etc/sgx_default_qcnl.conf
+RUN sed -i 's/"pccs_url": ".*"/"pccs_url": "'${PCCS_URL}'"/' /etc/sgx_default_qcnl.conf
 
 # Install SGX SDK
 RUN mkdir -p /opt/intel

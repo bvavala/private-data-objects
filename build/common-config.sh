@@ -68,6 +68,12 @@ var_set() {
 	"
 	env_key_sort[$i]="SGX_MODE"; i=$i+1; export SGX_MODE=${env_val[SGX_MODE]}
 
+    env_val[PCCS_URL]="${PCCS_URL:-https://$(hostname -A | cut -d" " -f1):8081/sgx/certification/v4/}"
+    env_desc[PCCS_URL]="
+        PCCS_URL is the URL of the SGX PCCS service necessary for dcap-based attestations.
+    "
+    env_key_sort[$i]="PCCS_URL"; i=$i+1; export PCCS_URL=${env_val[PCCS_URL]}
+
 	env_val[PDO_LEDGER_URL]="${PDO_LEDGER_URL:-http://127.0.0.1:6600}"
 	env_desc[PDO_LEDGER_URL]="
 		PDO_LEDGER_URL is the URL is to submit transactions to the ledger.
