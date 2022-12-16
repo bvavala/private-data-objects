@@ -152,6 +152,13 @@ you should provide your own version, at least for `PDO_SPID` and
 [BUILD document](install.md) for more information.
 
 <!-- -------------------------------------------------- -->
+
+### `PCCS_URL`
+(default: `https://$(hostname -A | cut -d" " -f1):8081/sgx/certification/v3/`)
+
+`PCCS_URL` is the url of the SGX PCCS service which is necessary for DCAP attestations.
+For other types of attestations, this value is ignored.
+
 ### `PDO_ENCLAVE_CODE_SIGN_PEM`
 (default: `${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem`):
 
