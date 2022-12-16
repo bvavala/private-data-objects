@@ -37,7 +37,7 @@ ifeq ($(SGX_ATTESTATION_TYPE),dcap)
 	SGX_DEVICE_PATH=$(shell if [ -e "/dev/sgx_enclave" ]; then echo "/dev/sgx_enclave"; else echo "ERROR: NO SGX DEVICE FOUND"; fi)
 	SGX_PROVISION_DEVICE_PATH=$(shell if [ -e "/dev/sgx_provision" ]; then echo "/dev/sgx_provision"; else echo "ERROR: NO SGX PROV DEVICE FOUND"; fi)
 	# set pccs url: grab from env, or assume it's in the local host listening on 8081
-	PCCS_URL:=$(if $(PCCS_URL),$(PCCS_URL),https://$(shell hostname -A | cut -d" " -f1):8081/sgx/certification/v4/)
+	PCCS_URL:=$(if $(PCCS_URL),$(PCCS_URL),https://$(shell hostname -A | cut -d" " -f1):8081/sgx/certification/v3/)
 	DOCKER_BUILD_OPTS := ${DOCKER_BUILD_OPTS} --build-arg PCCS_URL=${PCCS_URL}
 endif
 
