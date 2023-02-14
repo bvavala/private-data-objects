@@ -26,6 +26,9 @@
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 static PyObject* glogger = NULL;
+
+int logger_set = 0;
+
 void SetLogger(
     PyObject* inLogger
     )
@@ -34,6 +37,8 @@ void SetLogger(
         Py_DECREF(glogger);
     }
     glogger = inLogger;
+    logger_set = 1;
+
     if (glogger) {
         Py_INCREF(glogger);
     }
@@ -52,6 +57,12 @@ static void PyLog(
     if (!glogger)
     {
         printf("PyLog called before logger set, msg %s \n", msg);
+        return;
+    }
+
+    if(logger_set == 0)
+    {
+        printf("glogger not NULL, but logger_set false, msg %s \n", msg);
         return;
     }
 
