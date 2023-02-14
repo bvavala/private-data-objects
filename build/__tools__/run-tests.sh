@@ -99,6 +99,15 @@ if [[ "$PDO_INTERPRETER" =~ ^"wawaka" ]]; then
 
     cd ${SRCDIR}/contracts/wawaka
     try make system-test TEST_LOG_LEVEL=${PDO_LOG_LEVEL}
+    try make system-test TEST_LOG_LEVEL=${PDO_LOG_LEVEL}
+    try make system-test TEST_LOG_LEVEL=${PDO_LOG_LEVEL}
+    try make system-test TEST_LOG_LEVEL=${PDO_LOG_LEVEL}
+    try make system-test TEST_LOG_LEVEL=${PDO_LOG_LEVEL}
+    try make system-test TEST_LOG_LEVEL=${PDO_LOG_LEVEL}
+    try make system-test TEST_LOG_LEVEL=${PDO_LOG_LEVEL}
+    try make system-test TEST_LOG_LEVEL=${PDO_LOG_LEVEL}
+    try make system-test TEST_LOG_LEVEL=${PDO_LOG_LEVEL}
+    try make system-test TEST_LOG_LEVEL=${PDO_LOG_LEVEL}
 else
     yell no system tests for "${PDO_INTERPRETER}"
 fi
