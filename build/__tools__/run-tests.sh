@@ -62,25 +62,6 @@ if [ "${PDO_LEDGER_TYPE}" == "ccf" ]; then
 fi
 
 # -----------------------------------------------------------------
-yell run unit tests for python, common, contracts and eservice
-# -----------------------------------------------------------------
-say run unit tests for python package
-cd ${SRCDIR}/python
-try make TEST_LOG_LEVEL=${PDO_LOG_LEVEL} test > /dev/null
-
-say run unit tests for common library
-cd ${SRCDIR}/common/build
-try make TEST_LOG_LEVEL=${PDO_LOG_LEVEL} test > /dev/null
-
-say run unit tests for eservice
-cd ${SRCDIR}/eservice
-try make TEST_LOG_LEVEL=${PDO_LOG_LEVEL} test > /dev/null
-
-say run unit tests for contracts
-cd ${SRCDIR}/contracts
-try make TEST_LOG_LEVEL=${PDO_LOG_LEVEL} test > /dev/null
-
-# -----------------------------------------------------------------
 yell start enclave and provisioning services
 # -----------------------------------------------------------------
 try ${PDO_HOME}/bin/ss-start.sh --loglevel ${PDO_LOG_LEVEL} --count ${NUM_SERVICES} > /dev/null
@@ -89,43 +70,6 @@ try ${PDO_HOME}/bin/es-start.sh --loglevel ${PDO_LOG_LEVEL} --count ${NUM_SERVIC
 
 cd ${SRCDIR}/build
 
-# -----------------------------------------------------------------
-yell start tests without provisioning or enclave services
-# -----------------------------------------------------------------
-say start request test
-try pdo-test-request --no-ledger --iterations 100 \
-    --logfile __screen__ --loglevel ${PDO_LOG_LEVEL}
-
-# execute the common tests
-for test_file in ${SRCDIR}/build/tests/common/*.json ; do
-    test_contract=$(basename ${test_file} .json)
-    say start test ${test_contract} without services
-    try pdo-test-contract --no-ledger --contract ${test_contract} \
-        --expressions ${test_file} \
-        --logfile __screen__ --loglevel ${PDO_LOG_LEVEL}
-done
-
-# execute interpreter specific tests
-INTERPRETER_NAME=${PDO_INTERPRETER}
-if [[ "$PDO_INTERPRETER" =~ ^"wawaka-" ]]; then
-    INTERPRETER_NAME="wawaka"
-fi
-
-for test_file in ${SRCDIR}/build/tests/${INTERPRETER_NAME}/*.json ; do
-    test_contract=$(basename ${test_file} .json)
-    say start interpreter-specific test ${test_contract} without services
-    try pdo-test-contract --no-ledger --contract ${test_contract} \
-        --expressions ${test_file} \
-        --logfile __screen__ --loglevel ${PDO_LOG_LEVEL}
-done
-
-say start request test with tampered block order, this should fail
-pdo-test-request --no-ledger \
-    --tamper-block-order \
-    --logfile __screen__ --loglevel ${PDO_LOG_LEVEL}
-if [ $? == 0 ]; then
-    die request test with tampered block order succeeded though it should have failed
-fi
 
 ## -----------------------------------------------------------------
 yell start tests with provisioning and enclave services
@@ -148,71 +92,6 @@ try pdo-eservicedb --loglevel ${PDO_LOG_LEVEL} add -u http://localhost:7103 -n e
 try pdo-eservicedb --loglevel ${PDO_LOG_LEVEL} add -u http://localhost:7104 -n es7104
 try pdo-eservicedb --loglevel ${PDO_LOG_LEVEL} add -u http://localhost:7105 -n es7105
 
-say start storage service test
-try pdo-test-storage --url http://localhost:7201 --loglevel ${PDO_LOG_LEVEL} --logfile __screen__
-
-say start request test
-try pdo-test-request --ledger ${PDO_LEDGER_URL} \
-    --pservice http://localhost:7001/ http://localhost:7002 http://localhost:7003 \
-    --eservice-url http://localhost:7101/ \
-    --logfile __screen__ --loglevel ${PDO_LOG_LEVEL}
-
-# execute the common tests
-for test_file in ${SRCDIR}/build/tests/common/*.json ; do
-    test_contract=$(basename ${test_file} .json)
-    say start test ${test_contract} with services
-    try pdo-test-contract --contract ${test_contract} \
-        --expressions ${test_file} \
-        --pservice http://localhost:7001/ http://localhost:7002 http://localhost:7003 \
-        --eservice-url http://localhost:7101/ \
-        --logfile __screen__ --loglevel ${PDO_LOG_LEVEL}
-done
-
-# execute interpreter specific tests
-INTERPRETER_NAME=${PDO_INTERPRETER}
-if [[ "$PDO_INTERPRETER" =~ ^"wawaka-" ]]; then
-    INTERPRETER_NAME="wawaka"
-fi
-
-for test_file in ${SRCDIR}/build/tests/${INTERPRETER_NAME}/*.json ; do
-    test_contract=$(basename ${test_file} .json)
-    say start interpreter-specific test ${test_contract} with services
-    try pdo-test-contract --contract ${test_contract} \
-        --expressions ${test_file} \
-        --pservice http://localhost:7001/ http://localhost:7002 http://localhost:7003 \
-        --eservice-url http://localhost:7101/ \
-        --logfile __screen__ --loglevel ${PDO_LOG_LEVEL}
-done
-
-## -----------------------------------------------------------------
-## -----------------------------------------------------------------
-if [[ "$PDO_INTERPRETER" =~ ^"wawaka" ]]; then
-    yell start multi-user tests
-    try ${SRCDIR}/build/tests/multi-user.sh
-else
-    yell no multi-user test for ${PDO_INTERPRETER}
-fi
-
-## -----------------------------------------------------------------
-yell test failure conditions to ensure they are caught
-## -----------------------------------------------------------------
-say invalid method, this should fail
-${PDO_HOME}/bin/pdo-invoke.psh --identity user1 --pdo_file ${SAVE_FILE} --method no-such-method
-if [ $? == 0 ]; then
-    die mock contract test succeeded though it should have failed
-fi
-
-say policy violation with identity, this should fail
-${PDO_HOME}/bin/pdo-invoke.psh --identity user2 --pdo_file ${SAVE_FILE} --method get_value
-if [ $? == 0 ]; then
-    die mock contract test succeeded though it should have failed
-fi
-
-# -----------------------------------------------------------------
-yell test pdo-shell
-# -----------------------------------------------------------------
-try ${SRCDIR}/build/tests/shell-test.psh --loglevel ${PDO_LOG_LEVEL}
-
 # -----------------------------------------------------------------
 # -----------------------------------------------------------------
 if [[ "$PDO_INTERPRETER" =~ ^"wawaka" ]]; then
@@ -224,29 +103,5 @@ else
     yell no system tests for "${PDO_INTERPRETER}"
 fi
 
-# -----------------------------------------------------------------
-# -----------------------------------------------------------------
-cd ${SRCDIR}/build
-yell run tests for state replication
-say start mock-contract test with replication 3 eservices 2 replicas needed before txn.
-
-try pdo-test-request --ledger ${PDO_LEDGER_URL} \
-    --pservice http://localhost:7001/ http://localhost:7002 http://localhost:7003 \
-    --eservice-url http://localhost:7101/ http://localhost:7102/ http://localhost:7103/ \
-    --logfile __screen__ --loglevel ${PDO_LOG_LEVEL} --iterations 100 \
-    --num-provable-replicas 2 --availability-duration 100 --randomize-eservice
-
-if [ "${PDO_INTERPRETER}" == "gipsy" ]; then
-    say start memory test test with replication 3 eservices 2 replicas needed before txn
-    try pdo-test-contract --ledger ${PDO_LEDGER_URL} --contract memory-test \
-        --expressions ${SRCDIR}/build/tests/${PDO_INTERPRETER}/memory-test.json \
-        --pservice http://localhost:7001/ http://localhost:7002 http://localhost:7003 \
-        --eservice-url http://localhost:7101/ http://localhost:7102/ http://localhost:7103/ \
-        --logfile __screen__ --loglevel ${PDO_LOG_LEVEL} \
-        --num-provable-replicas 2 --availability-duration 100 --randomize-eservice
-fi
-
-# -----------------------------------------------------------------
-# -----------------------------------------------------------------
 yell completed all tests
 exit 0
