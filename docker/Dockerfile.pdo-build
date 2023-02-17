@@ -120,27 +120,4 @@ RUN \
  && env | grep PDO | egrep -v 'PDO_ENCLAVE_CODE_SIGN_PEM|PDO_INSTALL_ROOT|PDO_HOME' | sed 's/^PDO/export PDO/g' >> /etc/profile.d/pdo.sh \
 # Build PDO usuing the standard build scripts
  && make -C /project/pdo/src/private-data-objects/build/ NO_SGX_RUN_DURING_BUILD=true \
- && echo '. /project/pdo/build/bin/activate' >> /etc/profile.d/pdo.sh \
- && . /project/pdo/build/bin/activate \
-# - build script install in virtualenv. For docker this seems a bit overkill but easier than to
-#   duplicate all build instructions.
- && cd /project/pdo/src/private-data-objects \
- && sawtooth/bin/build_sawtooth_proto \
- && cd python \
- && python3 setup.py build_ext \
- && python3 setup.py install \
- && cd ../sawtooth \
- && python3 setup.py install \
-#
-# Build sawtooth interface.
- && cd /project/pdo/src/private-data-objects/eservice/ \
- && sed -i 's/python /python3 /g' Makefile \
- && make \
- && make install \
- && python3 setup.py install \
- && cd .. \
- && sawtooth/bin/build_sawtooth_proto \
- && cd python/ \
- && python3 setup.py install
-
-# TODO (eventually): clean-up /project/pdo/src (but for now keep it as some tests are still there ...)
+ && echo '. /project/pdo/build/bin/activate' >> /etc/profile.d/pdo.sh
