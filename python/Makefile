@@ -62,6 +62,8 @@ else
 	CRYPTO_LIB = ../common/build/libupdo-crypto.a
 endif
 
+$(info "before targets")
+
 all: $(EGG_FILE)
 	echo "make all done"
 
