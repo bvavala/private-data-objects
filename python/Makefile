@@ -49,6 +49,10 @@ KV_SWIG_FILES =							\
 
 KEYVAL_LIB = ../common/build/libpdo-lmdb-block-store.a
 
+SWIG_TARGETS = \
+	$(CRYPTO_SWIG_TARGET) \
+	$(KV_SWIG_TARGET)
+
 BUILD_CLIENT ?= 0
 ifeq ($(BUILD_CLIENT),1)
 	COMMON_LIB = ../common/build/libcpdo-common.a
@@ -65,11 +69,11 @@ $(PROTOBUF_DPATH)%_pb2.py : $(PROTOBUF_SPATH)%.proto
 
 $(addprefix $(PROTOBUF_DPATH),$(PROTOBUF_PYTHON)) : $(addprefix $(PROTOBUF_SPATH),$(PROTOBUF_SOURCE))
 
-$(EGG_FILE) : $(CRYPTO_SWIG_TARGET) $(KV_SWIG_TARGET) $(addprefix $(PROTOBUF_DPATH),$(PROTOBUF_PYTHON)) $(PYTHON_SOURCE)
+$(EGG_FILE) : $(SWIG_TARGETS) $(addprefix $(PROTOBUF_DPATH),$(PROTOBUF_PYTHON)) $(PYTHON_SOURCE)
 	@ . $(abspath $(DSTDIR)/bin/activate) && \
 		BUILD_CLIENT=$(BUILD_CLIENT) python3 setup.py bdist_egg
 
-$(CRYPTO_SWIG_TARGET) $(KV_SWIG_TARGET) : $(CRYPTO_SWIG_SOURCE) $(KV_SWIG_SOURCE) $(COMMON_LIB) $(CRYPTO_LIB) $(KEYVAL_LIB)
+$(SWIG_TARGETS) : $(CRYPTO_SWIG_SOURCE) $(KV_SWIG_SOURCE) $(COMMON_LIB) $(CRYPTO_LIB) $(KEYVAL_LIB)
 	@ . $(abspath $(DSTDIR)/bin/activate) && \
 		BUILD_CLIENT=$(BUILD_CLIENT) python3 setup.py build_ext --force
 
