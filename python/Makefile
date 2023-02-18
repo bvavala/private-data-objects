@@ -76,7 +76,7 @@ $(EGG_FILE) : $(SWIG_TARGETS) $(addprefix $(PROTOBUF_DPATH),$(PROTOBUF_PYTHON)) 
 		BUILD_CLIENT=$(BUILD_CLIENT) python3 setup.py bdist_egg
 	echo "egg built"
 
-$(SWIG_TARGETS) : $(CRYPTO_SWIG_SOURCE) $(KV_SWIG_SOURCE) $(COMMON_LIB) $(CRYPTO_LIB) $(KEYVAL_LIB)
+$(SWIG_TARGETS) &: $(CRYPTO_SWIG_SOURCE) $(KV_SWIG_SOURCE) $(COMMON_LIB) $(CRYPTO_LIB) $(KEYVAL_LIB)
 	echo "running swig target body"
 	@ . $(abspath $(DSTDIR)/bin/activate) && \
 		BUILD_CLIENT=$(BUILD_CLIENT) python3 setup.py build_ext --force
