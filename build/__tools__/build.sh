@@ -81,7 +81,9 @@ try make ${MAKE_ARGS} install
 
 yell --------------- PYTHON ---------------
 cd $SRCDIR/python
+yell running make 
 try make ${MAKE_ARGS}
+yell running make install 
 try make ${MAKE_ARGS} install
 
 yell --------------- SSERVICE ---------------

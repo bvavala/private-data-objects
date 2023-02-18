@@ -63,6 +63,7 @@ else
 endif
 
 all: $(EGG_FILE)
+	echo "make all done"
 
 $(PROTOBUF_DPATH)%_pb2.py : $(PROTOBUF_SPATH)%.proto
 	protoc --python_out=$(PROTOBUF_DPATH) --proto_path=$(PROTOBUF_SPATH) $<
@@ -70,10 +71,13 @@ $(PROTOBUF_DPATH)%_pb2.py : $(PROTOBUF_SPATH)%.proto
 $(addprefix $(PROTOBUF_DPATH),$(PROTOBUF_PYTHON)) : $(addprefix $(PROTOBUF_SPATH),$(PROTOBUF_SOURCE))
 
 $(EGG_FILE) : $(SWIG_TARGETS) $(addprefix $(PROTOBUF_DPATH),$(PROTOBUF_PYTHON)) $(PYTHON_SOURCE)
+	echo "building egg"
 	@ . $(abspath $(DSTDIR)/bin/activate) && \
 		BUILD_CLIENT=$(BUILD_CLIENT) python3 setup.py bdist_egg
+	echo "egg built"
 
 $(SWIG_TARGETS) : $(CRYPTO_SWIG_SOURCE) $(KV_SWIG_SOURCE) $(COMMON_LIB) $(CRYPTO_LIB) $(KEYVAL_LIB)
+	echo "running swig target body"
 	@ . $(abspath $(DSTDIR)/bin/activate) && \
 		BUILD_CLIENT=$(BUILD_CLIENT) python3 setup.py build_ext --force
 
