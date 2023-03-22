@@ -78,7 +78,6 @@ background.
 
 The easiest way to get started is to run
 ```bash
-make test-with-sawtooth
 make test-with-ccf
 ```
 which will build your current locally committed branch and run the
