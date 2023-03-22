@@ -13,7 +13,7 @@ jobs:
         strategy:
             matrix:
                 interpreter: [gipsy, wawaka, wawaka-opt]
-                pdo_ledger_type: [sawtooth, ccf]
+                pdo_ledger_type: [ccf]
 
         steps:
             - name: Check out repo
