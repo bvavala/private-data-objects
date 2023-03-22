@@ -57,7 +57,6 @@ class TransactionKeys(object) :
     """
 
     @classmethod
-    @deprecated
     def read_from_file(cls, file_name, search_path = ['.', './keys']) :
         full_file = putils.find_file_in_path(file_name, search_path)
         with open(full_file, "r") as ff :
@@ -67,12 +66,10 @@ class TransactionKeys(object) :
         return cls(secp256k1.PrivateKey(priv))
 
     @classmethod
-    @deprecated
     def from_hex(cls, hex_encoded_private_key) :
         priv = binascii.unhexlify(hex_encoded_private_key)
         return cls(secp256k1.PrivateKey(priv))
 
-    @deprecated
     def __init__(self, private_key = None) :
         if private_key == None :
             private_key = secp256k1.PrivateKey()
@@ -81,7 +78,6 @@ class TransactionKeys(object) :
         self.private_key = private_key
 
     @property
-    @deprecated
     def hashed_identity(self) :
         key_byte_array = crypto.string_to_byte_array(self.txn_public)
         hashed_txn_key = crypto.compute_message_hash(key_byte_array)
@@ -90,12 +86,10 @@ class TransactionKeys(object) :
         return encoded_hashed_key
 
     @property
-    @deprecated
     def txn_private(self) :
         return self.private_key.serialize()
 
     @property
-    @deprecated
     def txn_public(self) :
         return self.public_key.serialize().hex()
 

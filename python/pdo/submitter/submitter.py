@@ -24,7 +24,12 @@ class Submitter(object):
 
     def __init__(self, ledger_config, *args, **kwargs):
 
-        self.url = ledger_config.get('LedgerURL','http://localhost:6600')
+        self.url = ledger_config.get('LedgerURL', None)
+        if self.url is None:
+            # We do not set a default url here because, in CCF for example,
+            # the hostname in the url is checked against the CCF node certificate,
+            # which may likely be different than the default one set here.
+            raise Exception("Error: ledger url not provided in submitter")
         self.pdo_signer = kwargs.get('pdo_signer', None) #PDO payload signer
 
 # -----------------------------------------------------------------
