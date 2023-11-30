@@ -80,7 +80,8 @@ RUN . /opt/intel/sgxsdk/environment \
     && git clone --depth 1 --branch ${SGXSSL} 'https://github.com/intel/intel-sgx-ssl.git' \
     && wget -q -P /tmp/intel-sgx-ssl/openssl_source https://www.openssl.org/source/openssl-${OPENSSL}.tar.gz \
     && cd /tmp/intel-sgx-ssl/Linux \
-    && bash -c "make SGX_MODE=SIM NO_THREADS=1 DESTDIR=/opt/intel/sgxssl VERBOSE=0 all &> /dev/null" \
+    && make SGX_MODE=SIM NO_THREADS=1 DESTDIR=/opt/intel/sgxssl VERBOSE=1 all \
+    && make test \
     && make install \
     && make clean \
     && rm -rf /tmp/intel-sgx-ssl
