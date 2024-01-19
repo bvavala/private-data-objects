@@ -85,6 +85,8 @@ function Register {
         VAR_BASENAME=$(grep -o 'BASENAME:.*' ${eservice_enclave_info_file} | cut -f2- -d:)
 
         : "${PDO_LEDGER_URL:?Registration failed! PDO_LEDGER_URL environment variable not set}"
+        : "${PDO_LEDGER_ADDRESS:?Registration failed! PDO_LEDGER_ADDRESS environment variable not set}"
+        : "${PDO_LEDGER_PORT:?Registration failed! PDO_LEDGER_PORT environment variable not set}"
         : "PDO_IAS_KEY_PEM" "${PDO_IAS_KEY_PEM:?Registration failed! PDO_IAS_KEY_PEM environment variable not set}"
 
         if [ ${PDO_LEDGER_TYPE} == "ccf" ]; then

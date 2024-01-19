@@ -45,6 +45,7 @@ DOCKER_DIR ?= ${PDO_SOURCE_ROOT}/docker
 DOCKER_USERNAME = $(LOGNAME)
 DOCKER_BUILDARGS += --build-arg UID=$(PDO_USER_UID)
 DOCKER_BUILDARGS += --build-arg GID=$(PDO_GROUP_UID)
+DOCKER_BUILDARGS += --build-arg SGX_MODE=$(SGX_MODE)
 DOCKER_ARGS = $(DOCKER_BUILDARGS)
 
 IMAGES=base client services_base services ccf_base ccf
@@ -127,11 +128,24 @@ TEST_FILES += -f services_base.yaml
 TEST_FILES += -f ccf_base.yaml
 TEST_FILES += -f test.yaml
 
+DOCKER_COMPOSE_COMMAND=docker-compose
+
+ifeq ($(SGX_MODE),HW)
+	TEST_FILES += -f test-sgx-hw-mode.yaml
+	SGX_DEVICE_PATH=$(shell if [ -e "/dev/isgx" ]; \
+					then echo "/dev/isgx"; \
+					elif [ -e "/dev/sgx/enclave" ]; \
+						then echo "/dev/sgx/enclave"; \
+					else echo "ERROR: NO SGX DEVICE FOUND"; \
+					fi)
+	DOCKER_COMPOSE_COMMAND := env SGX_MODE=$(SGX_MODE) SGX_DEVICE_PATH=${SGX_DEVICE_PATH} ${DOCKER_COMPOSE_COMMAND}
+endif
+
 build_test : repository build_services build_ccf build_client
 
 test : clean_config clean_repository build_test stop_all
-	PDO_VERSION=$(PDO_VERSION) docker-compose $(TEST_FILES) up --abort-on-container-exit
-	PDO_VERSION=$(PDO_VERSION) docker-compose $(TEST_FILES) down
+	PDO_VERSION=$(PDO_VERSION) $(DOCKER_COMPOSE_COMMAND) $(TEST_FILES) up --abort-on-container-exit
+	PDO_VERSION=$(PDO_VERSION) $(DOCKER_COMPOSE_COMMAND) $(TEST_FILES) down
 
 # -----------------------------------------------------------------
 # Cleaning is a bit interesting because the containers don't go away
