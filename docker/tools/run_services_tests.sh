@@ -56,7 +56,7 @@ yell check for registration
 # -----------------------------------------------------------------
 # this probably requires additional CCF keys, need to test this
 if [ "$SGX_MODE" == "HW" ]; then
-    if [ ! -f ${XFER}/ccf/keys/memberccf_privk.pem ] ; then
+    if [ ! -f ${XFER_DIR}/ccf/keys/memberccf_privk.pem ] ; then
         die unable to locate CCF policies keys
     fi
 

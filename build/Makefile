@@ -109,6 +109,7 @@ rebuild : clean-build build $(CONDITIONAL_REGISTER_TARGET)
 system-keys : ${PDO_ENCLAVE_CODE_SIGN_PEM}
 
 ${PDO_ENCLAVE_CODE_SIGN_PEM} :
+	mkdir -p ${PDO_HOME}/keys/sgx/
 	openssl genrsa -3 -out ${PDO_ENCLAVE_CODE_SIGN_PEM} 3072
 
 # SERVICES_COUNT is the number of services of each type to create
