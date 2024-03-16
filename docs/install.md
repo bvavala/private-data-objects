@@ -57,12 +57,7 @@ SGX can operate in either simulation mode or hardware mode. Simulation
 mode does not require any processor support for SGX and can be useful
 for development and testing. However, simulation mode does not provide
 any protection for confidential data and does not guarantee integrity of
-execution. To use SGX in simulation mode set the `SGX_MODE` environment
-variable to `SIM`:
-
-```bash
-export SGX_MODE=SIM
-```
+execution.
 
 SGX hardware mode uses capabilities for trusted execution in the
 processor to protect confidentiality and integrity of computation. SGX
@@ -70,13 +65,6 @@ hardware mode requires processor support for SGX
 ([commonly available on recent Intel processors](https://ark.intel.com/content/www/us/en/ark/search/featurefilter.html)).
 PDO currently relies on EPID-based SGX attestation, which is supported
 on all SGX-enabled hardware (including FLC-enabled hardware).
-
-To use SGX in hardware mode set the `SGX_MODE` environment variable to
-`HW`:
-
-```bash
-export SGX_MODE=HW
-```
 
 The remainder of this section provides information about preparing to run
 Private Data Objects using SGX in hardware mode. Specifically, there

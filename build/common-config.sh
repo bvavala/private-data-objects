@@ -57,15 +57,6 @@ var_set() {
 	"
 	env_key_sort[$i]="PDO_INTERPRETER"; i=$i+1; export PDO_INTERPRETER=${env_val[PDO_INTERPRETER]};
 
-	env_val[SGX_MODE]="${SGX_MODE:-SIM}"
-	env_desc[SGX_MODE]="
-		SGX_MODE determines the SGX mode of operation. When the variable is
-		set to 'SIM', then the SGX enclaves will be compiled for simulator
-		mode. When the variable is set to 'HW', the enclaves will be compiled
-		to run in a real SGX enclave.
-	"
-	env_key_sort[$i]="SGX_MODE"; i=$i+1; export SGX_MODE=${env_val[SGX_MODE]}
-
 	env_val[PDO_LEDGER_URL]="${PDO_LEDGER_URL:-http://127.0.0.1:6600}"
 	env_desc[PDO_LEDGER_URL]="
 		PDO_LEDGER_URL is the URL is to submit transactions to the ledger.

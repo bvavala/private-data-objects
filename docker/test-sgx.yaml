@@ -15,9 +15,15 @@
 version: "3.4"
 
 services:
+  ccf_container:
+    image: pdo_ccf_sgx:${PDO_VERSION:-latest}
+
   services_container:
+    image: pdo_services_sgx:${PDO_VERSION:-latest}
     volumes:
       - /var/run/aesmd:/var/run/aesmd
     devices:
       - ${SGX_DEVICE_PATH:-/dev/isgx}:${SGX_DEVICE_PATH:-/dev/isgx}
 
+  client_container:
+    image: pdo_client_sgx:${PDO_VERSION:-latest}

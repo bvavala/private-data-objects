@@ -45,7 +45,6 @@ DOCKER_DIR ?= ${PDO_SOURCE_ROOT}/docker
 DOCKER_USERNAME = $(LOGNAME)
 DOCKER_BUILDARGS += --build-arg UID=$(PDO_USER_UID)
 DOCKER_BUILDARGS += --build-arg GID=$(PDO_GROUP_UID)
-DOCKER_BUILDARGS += --build-arg SGX_MODE=$(SGX_MODE)
 DOCKER_ARGS = $(DOCKER_BUILDARGS)
 
 IMAGES=base client services_base services ccf_base ccf
@@ -60,14 +59,33 @@ rebuild_% : repository
 	docker build $(DOCKER_ARGS) \
 		--build-arg REBUILD=$(TIMESTAMP) \
 		--build-arg PDO_VERSION=$(PDO_VERSION) \
+		--build-arg SGX_MODE=SIM \
 		--tag pdo_$*:$(PDO_VERSION) \
 		--file $(DOCKER_DIR)/pdo_$*.dockerfile .
 
 build_% : repository
 	docker build $(DOCKER_ARGS) \
 		--build-arg PDO_VERSION=$(PDO_VERSION) \
+		--build-arg SGX_MODE=SIM \
 		--tag pdo_$*:$(PDO_VERSION) \
 		--file $(DOCKER_DIR)/pdo_$*.dockerfile .
+
+all_sgx : $(addsuffix _sgx,$(addprefix build_,$(IMAGES)))
+
+rebuild_%_sgx : repository
+	docker build $(DOCKER_ARGS) \
+        --build-arg REBUILD=$(TIMESTAMP) \
+        --build-arg PDO_VERSION=$(PDO_VERSION) \
+		--build-arg SGX_MODE=HW \
+        --tag pdo_$*_sgx:$(PDO_VERSION) \
+        --file $(DOCKER_DIR)/pdo_$*.dockerfile .
+
+build_%_sgx : repository
+	docker build $(DOCKER_ARGS) \
+        --build-arg PDO_VERSION=$(PDO_VERSION) \
+		--build-arg SGX_MODE=HW \
+        --tag pdo_$*_sgx:$(PDO_VERSION) \
+        --file $(DOCKER_DIR)/pdo_$*.dockerfile .
 
 # docker build dependencies
 build_client: build_base
@@ -75,8 +93,16 @@ build_services: build_services_base
 build_services_base: build_base
 build_ccf: build_ccf_base
 
+build_client_sgx: build_base_sgx
+build_services_sgx: build_services_base_sgx
+build_services_base_sgx: build_base_sgx
+build_ccf_sgx: build_ccf_base_sgx
+
 clean_% :
 	docker rmi -f pdo_$*:$(PDO_VERSION)
+
+clean_%_sgx :
+	docker rmi -f pdo_$*_sgx:$(PDO_VERSION)
 
 DOCKER_RUN_ARGS = -v $(DOCKER_DIR)/xfer/:/project/pdo/xfer
 DOCKER_RUN_ARGS += --network host
@@ -90,6 +116,16 @@ run_services : build_base build_services_base build_services stop_services
 run_client : build_base build_client stop_client
 	docker run $(DOCKER_RUN_ARGS) -it --name client_container pdo_client:$(PDO_VERSION) \
 		-c "stty cols $$(tput cols) rows $$(tput lines) && bash"
+
+run_ccf_sgx : build_ccf_sgx stop_ccf_sgx
+	docker run $(DOCKER_RUN_ARGS) --name ccf_container -P -d pdo_ccf_sgx:$(PDO_VERSION)
+
+run_services_sgx : build_base_sgx build_services_base_sgx build_services_sgx stop_services_sgx
+	docker run $(DOCKER_RUN_ARGS) --name services_container -P -d pdo_services_sgx:$(PDO_VERSION)
+
+run_client_sgx : build_base_sgx build_client_sgx stop_client_sgx
+	docker run $(DOCKER_RUN_ARGS) -it --name client_container pdo_client_sgx:$(PDO_VERSION) \
+        -c "stty cols $$(tput cols) rows $$(tput lines) && bash"
 
 stop_all : stop_ccf stop_services stop_client
 
@@ -128,24 +164,27 @@ TEST_FILES += -f services_base.yaml
 TEST_FILES += -f ccf_base.yaml
 TEST_FILES += -f test.yaml
 
-DOCKER_COMPOSE_COMMAND=docker-compose
-
-ifeq ($(SGX_MODE),HW)
-	TEST_FILES += -f test-sgx.yaml
-	SGX_DEVICE_PATH=$(shell if [ -e "/dev/isgx" ]; \
-					then echo "/dev/isgx"; \
-					elif [ -e "/dev/sgx/enclave" ]; \
-						then echo "/dev/sgx/enclave"; \
-					else echo "ERROR: NO SGX DEVICE FOUND"; \
-					fi)
-	DOCKER_COMPOSE_COMMAND := env SGX_MODE=$(SGX_MODE) SGX_DEVICE_PATH=${SGX_DEVICE_PATH} ${DOCKER_COMPOSE_COMMAND}
-endif
+TEST_SGX_FILES = ${TEST_FILES}
+TEST_SGX_FILES += -f test-sgx.yaml
+SGX_DEVICE_PATH=$(shell if [ -e "/dev/isgx" ]; \
+				then echo "/dev/isgx"; \
+				elif [ -e "/dev/sgx/enclave" ]; \
+					then echo "/dev/sgx/enclave"; \
+				else echo "ERROR: NO SGX DEVICE FOUND"; \
+				fi)
+DOCKER_COMPOSE_COMMAND := env SGX_DEVICE_PATH=${SGX_DEVICE_PATH} docker-compose
 
 build_test : repository build_services build_ccf build_client
 
 test : clean_config clean_repository build_test stop_all
-	PDO_VERSION=$(PDO_VERSION) $(DOCKER_COMPOSE_COMMAND) $(TEST_FILES) up --abort-on-container-exit
-	PDO_VERSION=$(PDO_VERSION) $(DOCKER_COMPOSE_COMMAND) $(TEST_FILES) down
+	PDO_VERSION=$(PDO_VERSION) docker-compose $(TEST_FILES) up --abort-on-container-exit
+	PDO_VERSION=$(PDO_VERSION) docker-compose $(TEST_FILES) down
+
+buildtestsgx : repository build_services_sgx build_ccf_sgx build_client_sgx
+
+test_sgx : clean_config clean_repository buildtestsgx stop_all
+	PDO_VERSION=$(PDO_VERSION) $(DOCKER_COMPOSE_COMMAND) $(TEST_SGX_FILES) up --abort-on-container-exit
+	PDO_VERSION=$(PDO_VERSION) $(DOCKER_COMPOSE_COMMAND) $(TEST_SGX_FILES) down
 
 # -----------------------------------------------------------------
 # Cleaning is a bit interesting because the containers don't go away

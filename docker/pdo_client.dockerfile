@@ -42,6 +42,10 @@ USER $UNAME
 # -----------------------------------------------------------------
 ARG REBUILD=0
 
+ARG SGX_MODE
+RUN test -n "${SGX_MODE}" || (echo "SGX_MODE not set" && false)
+ENV SGX_MODE=${SGX_MODE}
+
 ARG PDO_DEBUG_BUILD=0
 ENV PDO_DEBUG_BUILD=${PDO_DEBUG_BUILD}
 

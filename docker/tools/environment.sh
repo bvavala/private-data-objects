@@ -21,7 +21,6 @@
 
 # these variables may be configured to change the behavior of the image
 # all should be set through the build variables in the dockerfiles.
-export SGX_MODE=${SGX_MODE:-SIM}
 export PDO_LEDGER_TYPE=${PDO_LEDGER_TYPE:-ccf}
 export PDO_INTERPRETER=${PDO_INTERPRETER:-wawaka}
 export WASM_MEM_CONFIG=${WASM_MEM_CONFIG:-MEDIUM}
@@ -47,11 +46,7 @@ export XFER_DIR=${XFER_DIR:-/project/pdo/xfer}
 # if the container is running HW mode, then we will grab the
 # SGX keys from the xfer directory; we know that the default
 # keys must be overridden
-if [ ${SGX_MODE} == "HW" ]; then
-    export PDO_SGX_KEY_ROOT=${XFER_DIR}/services/keys/sgx
-else
-    export PDO_SGX_KEY_ROOT=${PDO_SOURCE_ROOT}/build/keys/sgx_mode_${SGX_MODE,,}
-fi
+export PDO_SGX_KEY_ROOT=${XFER_DIR}/services/keys/sgx
 
 # this variable is needed for the build for signing the
 # eservice and pservice enclaves
