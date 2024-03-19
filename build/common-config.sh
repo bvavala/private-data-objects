@@ -110,7 +110,7 @@ var_set() {
 	"
 	env_key_sort[$i]="PDO_HOSTNAME"; i=$i+1; export PDO_HOSTNAME=${env_val[PDO_HOSTNAME]}
 
-    env_val[PDO_SGX_KEY_ROOT]="${PDO_SGX_KEY_ROOT:-${SCRIPTDIR}/keys/sgx_mode_${SGX_MODE,,}}"
+    env_val[PDO_SGX_KEY_ROOT]="${PDO_SGX_KEY_ROOT:-${PDO_SOURCE_ROOT}/docker/xfer/services/keys/sgx}"
 	env_desc[PDO_SGX_KEY_ROOT]="
 		PDO_SGX_KEY_ROOT is the root directory where SGX & IAS related keys are stored.
 		The default points to a directory which contains values which are good

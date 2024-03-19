@@ -42,6 +42,8 @@ PDO_GROUP_UID ?= $(shell id -g)
 # fact lots of things break very badly; set this explicitly
 DOCKER_DIR ?= ${PDO_SOURCE_ROOT}/docker
 
+DOCKER_ENCLAVE_SIGNING_PEM = $(DOCKER_DIR)/xfer/services/keys/sgx/enclave_code_sign.pem
+
 DOCKER_USERNAME = $(LOGNAME)
 DOCKER_BUILDARGS += --build-arg UID=$(PDO_USER_UID)
 DOCKER_BUILDARGS += --build-arg GID=$(PDO_GROUP_UID)
@@ -55,24 +57,62 @@ TIMESTAMP := $(shell /bin/date "+%Y%m%d%H%M%S")
 
 all : $(addprefix build_,$(IMAGES))
 
-rebuild_% : repository
+rebuild_% : repository $(DOCKER_ENCLAVE_SIGNING_PEM)
 	docker build $(DOCKER_ARGS) \
 		--build-arg REBUILD=$(TIMESTAMP) \
 		--build-arg PDO_VERSION=$(PDO_VERSION) \
+		--build-arg SGX_MODE=SIM \
+		--build-arg DOCKER_ENCLAVE_SIGNING_PEM=$(DOCKER_ENCLAVE_SIGNING_PEM:$(DOCKER_DIR)/%=%) \
 		--tag pdo_$*:$(PDO_VERSION) \
 		--file $(DOCKER_DIR)/pdo_$*.dockerfile .
 
-build_% : repository
+build_% : repository $(DOCKER_ENCLAVE_SIGNING_PEM)
 	docker build $(DOCKER_ARGS) \
 		--build-arg PDO_VERSION=$(PDO_VERSION) \
+		--build-arg SGX_MODE=SIM \
+		--build-arg DOCKER_ENCLAVE_SIGNING_PEM=$(DOCKER_ENCLAVE_SIGNING_PEM:$(DOCKER_DIR)/%=%) \
 		--tag pdo_$*:$(PDO_VERSION) \
 		--file $(DOCKER_DIR)/pdo_$*.dockerfile .
+
+all_sgx : $(addprefix build_sgx_,$(IMAGES))
+
+rebuild_sgx_% : repository $(DOCKER_ENCLAVE_SIGNING_PEM)
+	docker build $(DOCKER_ARGS) \
+        --build-arg REBUILD=$(TIMESTAMP) \
+        --build-arg PDO_VERSION=$(PDO_VERSION) \
+        --build-arg SGX_MODE=HW \
+		--build-arg DOCKER_ENCLAVE_SIGNING_PEM=$(DOCKER_ENCLAVE_SIGNING_PEM:$(DOCKER_DIR)/%=%) \
+        --tag pdo_$*:$(PDO_VERSION) \
+        --file $(DOCKER_DIR)/pdo_$*.dockerfile .
+
+build_sgx_% : repository $(DOCKER_ENCLAVE_SIGNING_PEM)
+	docker build $(DOCKER_ARGS) \
+        --build-arg PDO_VERSION=$(PDO_VERSION) \
+        --build-arg SGX_MODE=HW \
+		--build-arg DOCKER_ENCLAVE_SIGNING_PEM=$(DOCKER_ENCLAVE_SIGNING_PEM:$(DOCKER_DIR)/%=%) \
+        --tag pdo_$*:$(PDO_VERSION) \
+        --file $(DOCKER_DIR)/pdo_$*.dockerfile .
+
+# the enclave signing key must be available in the xfer folder
+# as it has to be transferred to the container
+$(DOCKER_ENCLAVE_SIGNING_PEM) : ${PDO_ENCLAVE_CODE_SIGN_PEM}
+	cp ${PDO_ENCLAVE_CODE_SIGN_PEM} $(DOCKER_ENCLAVE_SIGNING_PEM)
+
+# the enclave signing key is necessary at build time
+# a new one is generated on the host if not provided
+${PDO_ENCLAVE_CODE_SIGN_PEM} :
+	openssl genrsa -3 -out ${PDO_ENCLAVE_CODE_SIGN_PEM} 3072
 
 # docker build dependencies
 build_client: build_base
 build_services: build_services_base
 build_services_base: build_base
 build_ccf: build_ccf_base
+
+build_sgx_client: build_sgx_base
+build_sgx_services: build_sgx_services_base
+build_sgx_services_base: build_sgx_base
+build_sgx_ccf: build_sgx_ccf_base
 
 clean_% :
 	docker rmi -f pdo_$*:$(PDO_VERSION)
@@ -127,11 +167,29 @@ TEST_FILES += -f services_base.yaml
 TEST_FILES += -f ccf_base.yaml
 TEST_FILES += -f test.yaml
 
+TEST_SGX_FILES = ${TEST_FILES}
+TEST_SGX_FILES += -f test-sgx.yaml
+
+SGX_DEVICE_PATH=$(shell if [ -e "/dev/isgx" ]; \
+				then echo "/dev/isgx"; \
+				elif [ -e "/dev/sgx/enclave" ]; \
+					then echo "/dev/sgx/enclave"; \
+				else echo "ERROR: NO SGX DEVICE FOUND"; \
+				fi)
+
+DOCKER_COMPOSE_SGX := env SGX_DEVICE_PATH=${SGX_DEVICE_PATH} docker-compose
+
 build_test : repository build_services build_ccf build_client
 
 test : clean_config clean_repository build_test stop_all
 	PDO_VERSION=$(PDO_VERSION) docker-compose $(TEST_FILES) up --abort-on-container-exit
 	PDO_VERSION=$(PDO_VERSION) docker-compose $(TEST_FILES) down
+
+sgx_build_test : repository build_sgx_services build_sgx_ccf build_sgx_client
+
+sgx_test : clean_config clean_repository sgx_build_test stop_all
+	PDO_VERSION=$(PDO_VERSION) $(DOCKER_COMPOSE_SGX) $(TEST_SGX_FILES) up --abort-on-container-exit
+	PDO_VERSION=$(PDO_VERSION) $(DOCKER_COMPOSE_SGX) $(TEST_SGX_FILES) down
 
 # -----------------------------------------------------------------
 # Cleaning is a bit interesting because the containers don't go away

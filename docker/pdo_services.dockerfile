@@ -42,6 +42,10 @@ ENV WASM_MEM_CONFIG=${WASM_MEM_CONFIG}
 ARG PDO_LOG_LEVEL=info
 ENV PDO_LOG_LEVEL=${PDO_LOG_LEVEL}
 
+ARG DOCKER_ENCLAVE_SIGNING_PEM
+RUN test -n "${DOCKER_ENCLAVE_SIGNING_PEM}" || \
+    (echo "DOCKER_ENCLAVE_SIGNING_PEM not set; provide path relative to docker context" && false)
+
 # copy the source files into the image
 WORKDIR /project/pdo
 COPY --chown=${UNAME}:${UNAME} repository /project/pdo/src
@@ -52,11 +56,21 @@ COPY --chown=${UNAME}:${UNAME} repository /project/pdo/src
 WORKDIR /project/pdo/tools
 COPY --chown=${UNAME}:${UNAME} tools/*.sh ./
 
+# copy the enclave signing key from the host to the container
+# note: the source comes from the DOCKER_ENCLAVE_SIGNING_PEM argument provided by the host
+#       the destination is in the PDO_ENCLAVE_CODE_SIGN_PEM value specified in the docker environment.sh
+#       so we copy the key in the tmp folder, and then move it to the right location
+COPY --chown=${UNAME}:${UNAME} ${DOCKER_ENCLAVE_SIGNING_PEM} /tmp/enclave_code_sign.pem
+RUN bash -c '. environment.sh; install -D /dev/null ${PDO_ENCLAVE_CODE_SIGN_PEM}; mv /tmp/enclave_code_sign.pem ${PDO_ENCLAVE_CODE_SIGN_PEM}'
+
 # built it!
 ARG UID=1000
 ARG GID=${UID}
 RUN --mount=type=cache,uid=${UID},gid=${GID},target=/project/pdo/.cache/pip \
     /project/pdo/tools/build_services.sh
+
+# remove the enclave signing key from the container after the build
+RUN bash -c '. environment.sh; rm -rf ${PDO_ENCLAVE_CODE_SIGN_PEM}'
 
 # Network ports for running services
 EXPOSE 7001 7002 7003 7004 7005
