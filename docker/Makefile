@@ -165,7 +165,14 @@ test : clean_config clean_repository build_test stop_all
 
 sgx_build_test : repository build_sgx_services build_ccf build_client
 
-sgx_test : clean_config clean_repository sgx_build_test stop_all
+sgx_keys :
+	# test for key availability and make keys available to the container through xfer
+	test -f ${PDO_SGX_KEY_ROOT}/sgx_spid_api_key.txt
+	test -f ${PDO_SGX_KEY_ROOT}/sgx_spid.txt
+	test -f ${PDO_SGX_KEY_ROOT}/sgx_ias_key.pem
+	cp ${PDO_SGX_KEY_ROOT}/* '$(DOCKER_DIR)'/xfer/services/keys/sgx/
+
+sgx_test : clean_config clean_repository sgx_build_test stop_all sgx_keys
 	PDO_VERSION=$(PDO_VERSION) $(DOCKER_COMPOSE_SGX) $(TEST_SGX_FILES) up --abort-on-container-exit
 	PDO_VERSION=$(PDO_VERSION) $(DOCKER_COMPOSE_SGX) $(TEST_SGX_FILES) down
 
@@ -184,6 +191,7 @@ clean_images : $(addprefix clean_,$(IMAGES))
 clean_config :
 	rm -f '$(DOCKER_DIR)'/xfer/ccf/keys/*.pem '$(DOCKER_DIR)'/xfer/ccf/etc/*.toml
 	rm -f '$(DOCKER_DIR)'/xfer/services/keys/*.pem '$(DOCKER_DIR)'/xfer/services/etc/*.toml
+	rm -f '$(DOCKER_DIR)'/xfer/services/keys/sgx/*.pem '$(DOCKER_DIR)'/xfer/services/keys/sgx/*.txt
 	rm -f '$(DOCKER_DIR)'/xfer/services/etc/site.psh
 
 clean : clean_images clean_config clean_repository
