@@ -115,7 +115,7 @@ try cp ${XFER_DIR}/ccf/keys/networkcert.pem ${PDO_LEDGER_KEY_ROOT}/
 yell register the enclave if necessary
 # -----------------------------------------------------------------
 if [ "${F_REGISTER,,}" == 'yes' ]; then
-    if [ ! -f ${XFER}/ccf/keys/memberccf_privk.pem ] ; then
+    if [ ! -f ${XFER_DIR}/ccf/keys/memberccf_privk.pem ] ; then
         die unable to locate CCF policies keys
     fi
 
