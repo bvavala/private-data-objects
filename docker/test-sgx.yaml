@@ -20,6 +20,7 @@ services:
       - SGX_MODE=HW
 
   services_container:
+    image: pdo_services_sgx:${PDO_VERSION:-latest}
     volumes:
       - /var/run/aesmd:/var/run/aesmd
     devices:

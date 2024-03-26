@@ -50,7 +50,7 @@ DOCKER_BUILDARGS += --build-arg UID=$(PDO_USER_UID)
 DOCKER_BUILDARGS += --build-arg GID=$(PDO_GROUP_UID)
 DOCKER_ARGS = $(DOCKER_BUILDARGS)
 
-IMAGES=base client services_base services ccf_base ccf
+IMAGES=base client services_base services services_sgx ccf_base ccf
 
 # for the most part this is just used to force rebuild when the
 # PDO repository has changed
@@ -75,7 +75,7 @@ sgx_build_services : repository build_services_base
 	docker build $(DOCKER_ARGS) \
         --build-arg PDO_VERSION=$(PDO_VERSION) \
         --build-arg SGX_MODE=HW \
-        --tag pdo_services:$(PDO_VERSION) \
+        --tag pdo_services_sgx:$(PDO_VERSION) \
         --file $(DOCKER_DIR)/pdo_services.dockerfile .
 
 # docker build dependencies
