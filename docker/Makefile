@@ -71,7 +71,7 @@ build_% : repository
 		--tag pdo_$*:$(PDO_VERSION) \
 		--file '$(DOCKER_DIR)'/pdo_$*.dockerfile .
 
-build_sgx_services : repository
+sgx_build_services : repository build_services_base
 	docker build $(DOCKER_ARGS) \
         --build-arg PDO_VERSION=$(PDO_VERSION) \
         --build-arg SGX_MODE=HW \
@@ -83,8 +83,6 @@ build_client: build_base
 build_services: build_services_base
 build_services_base: build_base
 build_ccf: build_ccf_base
-
-build_sgx_services: build_services_base
 
 clean_% :
 	docker rmi -f pdo_$*:$(PDO_VERSION)
@@ -121,11 +119,22 @@ stop_client :
 # performance requirements are relatively low.
 # -----------------------------------------------------------------
 repository :
-	# if an enclave signing key is available on the host, copy that under build/keys in the repo
+	# If an enclave signing key is available on the host, copy that under build/keys in the repo
 	# Note: the docker build (see PDO_ENCLAVE_CODE_SIGN_PEM in environment.sh) expects the key there
-	[ ! -e ${PDO_ENCLAVE_CODE_SIGN_PEM} ] ||\
-		(test ${PDO_ENCLAVE_CODE_SIGN_PEM} -ef ${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem || \
-		cp ${PDO_ENCLAVE_CODE_SIGN_PEM} ${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem)
+	if [ ! -z "${PDO_ENCLAVE_CODE_SIGN_PEM}" ]; then \
+		if [ -z "${PDO_SGX_KEY_ROOT}" ]; then \
+			echo "Error: PDO_SGX_KEY_ROOT must be defined to transfer the enclave signing key in docker"; exit 1; \
+		fi ;\
+		if [ -e ${PDO_ENCLAVE_CODE_SIGN_PEM} ]; then \
+			echo "Enclave code signing key: using ${PDO_ENCLAVE_CODE_SIGN_PEM}"; \
+			(test ${PDO_ENCLAVE_CODE_SIGN_PEM} -ef ${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem || \
+			cp ${PDO_ENCLAVE_CODE_SIGN_PEM} ${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem); \
+		else \
+			echo "Enclave code signing key: unavailable, a new one will be generated"; \
+		fi \
+	else \
+		echo "Enclave code signing key: PDO_ENCLAVE_CODE_SIGN_PEM undefined, a new one will be generated"; \
+	fi
 	# clone the repo
 	git clone --single-branch --branch $(PDO_BRANCH) --recurse-submodules '$(PDO_REPO)' repository
 
@@ -163,14 +172,33 @@ test : clean_config clean_repository build_test stop_all
 	PDO_VERSION=$(PDO_VERSION) docker-compose $(TEST_FILES) up --abort-on-container-exit
 	PDO_VERSION=$(PDO_VERSION) docker-compose $(TEST_FILES) down
 
-sgx_build_test : repository build_sgx_services build_ccf build_client
+sgx_build_test : repository sgx_build_services build_ccf build_client
 
 sgx_keys :
-	# test for key availability and make keys available to the container through xfer
-	test -f ${PDO_SGX_KEY_ROOT}/sgx_spid_api_key.txt
-	test -f ${PDO_SGX_KEY_ROOT}/sgx_spid.txt
-	test -f ${PDO_SGX_KEY_ROOT}/sgx_ias_key.pem
-	cp ${PDO_SGX_KEY_ROOT}/* '$(DOCKER_DIR)'/xfer/services/keys/sgx/
+	# check for collateral in PDO_SGX_KEY_ROOT and copy that in xfer
+	# or, copy anything in the default folder to xfer
+	if [ ! -z "${PDO_SGX_KEY_ROOT}" ]; then \
+		echo "Checking for source SGX collateral in ${PDO_SGX_KEY_ROOT}"; \
+		if [ ! -f ${PDO_SGX_KEY_ROOT}/sgx_spid_api_key.txt ] || \
+			[ ! -f ${PDO_SGX_KEY_ROOT}/sgx_spid.txt ] || \
+			[ ! -f ${PDO_SGX_KEY_ROOT}/sgx_ias_key.pem ]; then \
+			echo "Error: check PDO_SGX_KEY_ROOT and SGX collateral in it"; exit 1; \
+		fi ;\
+		echo "Copying source SGX collateral to docker"; \
+		cp ${PDO_SGX_KEY_ROOT}/* '$(DOCKER_DIR)'/xfer/services/keys/sgx/; \
+	else \
+		echo "PDO_SGX_KEY_ROOT undefined, rsync default folder to docker"; \
+		rsync -r ${PDO_SOURCE_ROOT}/build/keys/sgx_mode_hw/ '$(DOCKER_DIR)'/xfer/services/keys/sgx/; \
+	fi
+
+	# test collateral availability in xfer (possibly, but not necessarily, after the copy above)
+	@echo "Checking for SGX collateral in docker"
+	if [ ! -f '$(DOCKER_DIR)'/xfer/services/keys/sgx/sgx_spid_api_key.txt ] || \
+		[ ! -f '$(DOCKER_DIR)'/xfer/services/keys/sgx/sgx_spid.txt ] || \
+		[ ! -f '$(DOCKER_DIR)'/xfer/services/keys/sgx/sgx_ias_key.pem ]; then \
+		echo "Error: SGX collateral not docker-ready -- set PDO_SGX_KEY_ROOT and check collateral"; exit 1; \
+	fi
+	@echo "SGX collateral is docker-ready"
 
 sgx_test : clean_config clean_repository sgx_build_test stop_all sgx_keys
 	PDO_VERSION=$(PDO_VERSION) $(DOCKER_COMPOSE_SGX) $(TEST_SGX_FILES) up --abort-on-container-exit

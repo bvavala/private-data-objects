@@ -84,7 +84,7 @@ on how to use the client container.
 For the contract enclave to run in SGX hardware mode, the `pdo_services`
 image must be built using the following target:
 ```bash
-    make build_sgx_services
+    make sgx_build_services
 ```
 Inside the `pdo_services` images, the `SGX_MODE` environment variable 
 can help distinguish the build type.
