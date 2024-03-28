@@ -87,8 +87,6 @@ yell copy sgx keys
 # -----------------------------------------------------------------
 [ -z "$(ls -A ${XFER_DIR}/services/keys/sgx/)" ] ||\
     cp ${XFER_DIR}/services/keys/sgx/* ${PDO_SGX_KEY_ROOT}
-# refresh the environment variables (necessary for SGX-related ones)
-source /project/pdo/tools/environment.sh
 
 # -----------------------------------------------------------------
 yell Register with ledger: ${F_REGISTER}
