@@ -41,10 +41,6 @@ configuration file:
 | `sservice` | state storage service associated with an enclave service | [`sservice.toml`](../build/opt/pdo/templates/sservice.toml) |
 | `pdo-shell` | the PDO client shell for creating contracts and invoking methods | [`pcontract.toml`](../build/opt/pdo/templates/pcontract.toml) |
 
-For simplicity in installation, the file `enclave.toml` in the
-`${PDO_HOME}/etc` directory contains the configuration for the accessing
-the Intel Attestation Service.
-
 In addition, most provided `pdo-shell` scripts use the service
 configuration information found in
 [`${PDO_HOME}/etc/site.psh`](../build/opt/pdo/templates/site.psh).

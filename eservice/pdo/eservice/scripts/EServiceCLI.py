@@ -246,7 +246,7 @@ def Main() :
     config_map = pconfig.build_configuration_map()
 
     # parse out the configuration file first
-    conffiles = [ 'eservice.toml', 'enclave.toml' ]
+    conffiles = [ 'eservice.toml' ]
     confpaths = [ ".", "./etc", config_map['etc'] ]
 
     parser = argparse.ArgumentParser()
@@ -270,6 +270,8 @@ def Main() :
     parser.add_argument('--enclave-data', help='Name of the file containing enclave sealed storage', type=str)
     parser.add_argument('--enclave-save', help='Name of the directory where enclave data will be save', type=str)
     parser.add_argument('--enclave-path', help='Directories to search for the enclave data file', type=str, nargs = '+')
+
+    parser.add_argument('--sgx-key-root', help='Path to SGX key root folder', type = str)
 
     options = parser.parse_args()
 
@@ -338,6 +340,11 @@ def Main() :
         config['EnclaveData']['SavePath'] = options.enclave_save
     if options.enclave_path :
         config['EnclaveData']['SearchPath'] = options.enclave_path
+
+    if options.sgx_key_root :
+        config['SgxKeyRoot'] = options.sgx_key_root
+    else :
+        config['SgxKeyRoot'] = os.environ.get('PDO_SGX_KEY_ROOT', "")
 
     # set up the enclave service configuration
     if config.get('StorageService') is None :

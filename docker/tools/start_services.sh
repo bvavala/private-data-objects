@@ -85,8 +85,6 @@ export NO_PROXY=$PDO_HOSTNAME,$PDO_LEDGER_ADDRESS,$NO_PROXY
 # -----------------------------------------------------------------
 yell copy sgx keys
 # -----------------------------------------------------------------
-# this collateral *must* be copied before configuring the services
-# as it will be included in the service/enclave toml files
 [ -z "$(ls -A ${XFER_DIR}/services/keys/sgx/)" ] ||\
     cp ${XFER_DIR}/services/keys/sgx/* ${PDO_SGX_KEY_ROOT}
 # refresh the environment variables (necessary for SGX-related ones)

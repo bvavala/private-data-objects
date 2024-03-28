@@ -391,7 +391,9 @@ def LocalMain(config) :
         # enclave configuration is in the 'EnclaveConfig' table
         try :
             logger.debug('initialize the enclave')
-            pdo_enclave_helper.initialize_enclave(config.get('EnclaveModule'))
+            enclave_config = config['EnclaveModule']
+            enclave_config['SgxKeyRoot'] = config['SgxKeyRoot']
+            pdo_enclave_helper.initialize_enclave(enclave_config)
             logger.info('EnclaveModule; %s', config.get('EnclaveModule'))
         except Error as e :
             logger.exception('failed to initialize enclave; %s', e)
@@ -446,6 +448,8 @@ def Main() :
     parser.add_argument('--provisioning-path', help='Directories to search for the enclave data file', type=str, nargs='+')
     parser.add_argument('--provisioning-data', help='Name of the file containing enclave sealed storage', type=str)
 
+    parser.add_argument('--sgx-key-root', help='Path to SGX key root folder', type = str)
+
     options = parser.parse_args()
 
     # first process the options necessary to load the default configuration
@@ -497,6 +501,11 @@ def Main() :
         # which may likely be different than the default one set here.
         logger.error('Ledger url not provided as option or config parameter')
         sys.exit(-1)
+
+    if options.sgx_key_root :
+        config['SgxKeyRoot'] = options.sgx_key_root
+    else :
+        config['SgxKeyRoot'] = os.environ.get('PDO_SGX_KEY_ROOT', "")
 
     # set up the provisioning service configuration
     if config.get('ProvisioningService') is None :

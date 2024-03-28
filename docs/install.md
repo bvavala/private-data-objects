@@ -125,10 +125,8 @@ or you can define yours with `export PDO_SGX_KEY_ROOT=<your folder>`):
 #### (optional) Set the path to an existing enclave code signing key
 
 At build time, an enclave code signing key is required to sign the contract enclave.
-If one such key is available, it can be used by configuring PDO as follows:
-```bash
-export PDO_ENCLAVE_CODE_SIGN_PEM=<absolute path to enclave code signing key>
-```
+If one such key is available, it can be used by organizing it as follows:
+* save the enclave code signing key in `${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem`
 
 #### Install the SGX Kernel Driver (Hardware Support)
 

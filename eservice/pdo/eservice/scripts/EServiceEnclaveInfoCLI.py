@@ -18,6 +18,7 @@ import os
 import sys
 import argparse
 import json
+from pathlib import Path
 
 import pdo.common.config as pconfig
 import pdo.common.logger as plogger
@@ -30,13 +31,16 @@ logger = logging.getLogger(__name__)
 
 import time
 
+
+
 # -----------------------------------------------------------------
 # -----------------------------------------------------------------
-def GetBasename(spid, save_path, config) :
+def GetBasename(save_path, config) :
     attempts = 0
     while True :
         try :
             logger.debug('initialize the enclave')
+            spid = Path(os.path.join(config['SgxKeyRoot'], "sgx_spid.txt")).read_text()
             info = pdo_enclave_helper.get_enclave_service_info(spid)
 
             logger.info('save MR_ENCLAVE and MR_BASENAME to %s', save_path)
@@ -71,6 +75,7 @@ def GetIasCertificates(config) :
     # the creation of signup info includes getting a verification report from IAS
     try :
         enclave_config = config['EnclaveModule']
+        enclave_config['SgxKeyRoot'] = config['SgxKeyRoot']
         pdo_enclave.initialize_with_configuration(enclave_config)
     except Exception as e :
         logger.error("unable to initialize a new enclave; %s", str(e))
@@ -85,14 +90,10 @@ def GetIasCertificates(config) :
         ias_certificates = pd_dict['certificates']
 
         # dump the IAS certificates in the respective files
-        IasKeysPath = os.environ.get("PDO_SGX_KEY_ROOT")
-
-        IasRootCACertificate_FilePath = os.path.join(IasKeysPath, "ias_root_ca.cert")
-        with open(IasRootCACertificate_FilePath, "w+") as file :
+        with open(os.path.join(config['SgxKeyRoot'], "ias_root_ca.cert"), "w+") as file :
             file.write("{0}".format(ias_certificates[1]))
 
-        IasAttestationVerificationCertificate_FilePathname = os.path.join(IasKeysPath, "ias_signing.cert")
-        with open(IasAttestationVerificationCertificate_FilePathname, "w+") as file :
+        with open(os.path.join(config['SgxKeyRoot'], "ias_signing.cert"), "w+") as file :
             file.write("{0}".format(ias_certificates[0]))
 
     except Exception as e :
@@ -103,8 +104,8 @@ def GetIasCertificates(config) :
         # do a clean shutdown of enclave
         pdo_enclave.shutdown()
 
-def LocalMain(config, spid, save_path) :
-    GetBasename(spid, save_path, config)
+def LocalMain(config, save_path) :
+    GetBasename(save_path, config)
     GetIasCertificates(config)
 
     sys.exit(0)
@@ -118,7 +119,7 @@ def Main() :
     config_map = pconfig.build_configuration_map()
 
     # parse out the configuration file first
-    conffiles = [ 'eservice.toml', 'enclave.toml' ]
+    conffiles = [ 'eservice.toml' ]
     confpaths = [ ".", "./etc", config_map['etc'] ]
 
     parser = argparse.ArgumentParser()
@@ -126,7 +127,7 @@ def Main() :
     parser.add_argument('--config-dir', help='directory to search for configuration files', nargs = '+')
 
     parser.add_argument('--identity', help='Identity to use for the process', required = True, type = str)
-    parser.add_argument('--spid', help='SPID to generate enclave basename', type=str)
+    parser.add_argument('--sgx-key-root', help='Path to SGX key root folder', type = str)
     parser.add_argument('--save', help='Where to save MR_ENCLAVE and BASENAME', type=str)
 
     parser.add_argument('--logfile', help='Name of the log file, __screen__ for standard output', type=str)
@@ -144,15 +145,18 @@ def Main() :
     if options.save :
         save_path = options.save
 
-    if options.spid :
-        spid = options.spid
-
     config_map['identity'] = options.identity
     try :
         config = pconfig.parse_configuration_files(conffiles, confpaths, config_map)
     except pconfig.ConfigurationException as e :
         logger.error(str(e))
         sys.exit(-1)
+
+    #Location of the SGX keys
+    if options.sgx_key_root :
+        config['SgxKeyRoot'] = options.sgx_key_root
+    else :
+        config['SgxKeyRoot'] = os.environ.get('PDO_SGX_KEY_ROOT', "")
 
     # set up the logging configuration
     if config.get('Logging') is None :
@@ -169,7 +173,7 @@ def Main() :
     sys.stderr = plogger.stream_to_logger(logging.getLogger('STDERR'), logging.WARN)
 
     # GO!
-    LocalMain(config, spid, save_path)
+    LocalMain(config, save_path)
 
 ## -----------------------------------------------------------------
 ## Entry points

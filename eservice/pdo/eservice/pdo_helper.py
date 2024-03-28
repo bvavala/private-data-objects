@@ -59,6 +59,7 @@ def initialize_enclave(config) :
 
     try :
         enclave_config = config['EnclaveModule']
+        enclave_config['SgxKeyRoot'] = config['SgxKeyRoot']
         pdo_enclave.initialize_with_configuration(enclave_config)
     except KeyError as ke :
         raise Exception('missing enclave module configuration')

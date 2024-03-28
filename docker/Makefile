@@ -120,20 +120,27 @@ stop_client :
 # -----------------------------------------------------------------
 repository :
 	# If an enclave signing key is available on the host, copy that under build/keys in the repo
-	# Note: the docker build (see PDO_ENCLAVE_CODE_SIGN_PEM in environment.sh) expects the key there
-	if [ ! -z "${PDO_ENCLAVE_CODE_SIGN_PEM}" ]; then \
-		if [ -z "${PDO_SGX_KEY_ROOT}" ]; then \
-			echo "Error: PDO_SGX_KEY_ROOT must be defined to transfer the enclave signing key in docker"; exit 1; \
-		fi ;\
-		if [ -e ${PDO_ENCLAVE_CODE_SIGN_PEM} ]; then \
-			echo "Enclave code signing key: using ${PDO_ENCLAVE_CODE_SIGN_PEM}"; \
-			(test ${PDO_ENCLAVE_CODE_SIGN_PEM} -ef ${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem || \
-			cp ${PDO_ENCLAVE_CODE_SIGN_PEM} ${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem); \
+	# Note: on the host, the key must be in ${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem,
+	# and the env variable must be defined.
+	# Note: in the docker container, the host key (or a new key) will be placed on the same path,
+	# but the PDO_SGX_KEY_ROOT default value is defined in docker/tools/environment.sh
+	DEFAULT_KEY_PATH="${PDO_SOURCE_ROOT}/build/keys/sgx_mode_${SGX_MODE,,}/enclave_code_sign.pem"; \
+	if [ ! -z "${PDO_SGX_KEY_ROOT}" ]; then \
+		echo "PDO_SGX_KEY_ROOT: defined"; \
+		if [ -e "${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem" ]; then \
+			echo "Enclave signing key: using host-provided: ${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem"; \
+			(test ${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem -ef ${DEFAULT_KEY_PATH} || \
+			cp ${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem ${DEFAULT_KEY_PATH}); \
 		else \
-			echo "Enclave code signing key: unavailable, a new one will be generated"; \
-		fi \
+			echo "Enclave signing key: not found on host, a new one will be generated"; \
+		fi; \
 	else \
-		echo "Enclave code signing key: PDO_ENCLAVE_CODE_SIGN_PEM undefined, a new one will be generated"; \
+		echo "PDO_SGX_KEY_ROOT: not defined"; \
+		if [ -e "${DEFAULT_KEY_PATH}" ]; then \
+			echo "Enclave signing key: found in default path and will be used: ${DEFAULT_KEY_PATH}"; \
+		else \
+			echo "Enclave signing key: not found, a new one will be generated"; \
+		fi; \
 	fi
 	# clone the repo
 	git clone --single-branch --branch $(PDO_BRANCH) --recurse-submodules '$(PDO_REPO)' repository

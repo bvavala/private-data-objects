@@ -187,8 +187,6 @@ def build_configuration_map(**kwargs) :
 
     # these are effectively required by common-config, but clients dont
     # need them and we should be able to set reasonable defaults
-    SPID = os.environ.get("PDO_SPID", "DEADBEEF00000000DEADBEEF00000000")
-    SPID_API_KEY = os.environ.get("PDO_SPID_API_KEY", "deadbeef00000000deadbeef00000000")
     SGX_MODE = os.environ.get("SGX_MODE", "SIM")
 
     ContractHost = kwargs.get('host') or os.environ.get("PDO_HOSTNAME", os.environ.get("HOSTNAME", "localhost"))
@@ -228,9 +226,7 @@ def build_configuration_map(**kwargs) :
         'ledger_type': LedgerType,
         'ledger_key_root' : LedgerKeyRoot,
         'proxy' : HttpsProxy,
-        'sgx_mode' : SGX_MODE,
-        'spid' : SPID,
-        'spid_api_key' : SPID_API_KEY
+        'sgx_mode' : SGX_MODE
     }
 
     return config_map
