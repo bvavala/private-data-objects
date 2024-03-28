@@ -119,29 +119,11 @@ stop_client :
 # performance requirements are relatively low.
 # -----------------------------------------------------------------
 repository :
-	# If an enclave signing key is available on the host, copy that under build/keys in the repo
-	# Note: on the host, the key must be in ${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem,
-	# and the env variable must be defined.
-	# Note: in the docker container, the host key (or a new key) will be placed on the same path,
-	# but the PDO_SGX_KEY_ROOT default value is defined in docker/tools/environment.sh
-	DEFAULT_KEY_PATH="${PDO_SOURCE_ROOT}/build/keys/sgx_mode_${SGX_MODE,,}/enclave_code_sign.pem"; \
-	if [ ! -z "${PDO_SGX_KEY_ROOT}" ]; then \
-		echo "PDO_SGX_KEY_ROOT: defined"; \
-		if [ -e "${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem" ]; then \
-			echo "Enclave signing key: using host-provided: ${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem"; \
-			(test ${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem -ef ${DEFAULT_KEY_PATH} || \
-			cp ${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem ${DEFAULT_KEY_PATH}); \
-		else \
-			echo "Enclave signing key: not found on host, a new one will be generated"; \
-		fi; \
-	else \
-		echo "PDO_SGX_KEY_ROOT: not defined"; \
-		if [ -e "${DEFAULT_KEY_PATH}" ]; then \
-			echo "Enclave signing key: found in default path and will be used: ${DEFAULT_KEY_PATH}"; \
-		else \
-			echo "Enclave signing key: not found, a new one will be generated"; \
-		fi; \
-	fi
+	# prepare enclave signing key (if any, this goes in the repo itself)
+	bash -c " \
+		export PDO_SOURCE_ROOT=$(PDO_SOURCE_ROOT); \
+		. $(DOCKER_DIR)/tools/prepare_collateral.sh && prepare_buildtime_enclavesigningkey"
+
 	# clone the repo
 	git clone --single-branch --branch $(PDO_BRANCH) --recurse-submodules '$(PDO_REPO)' repository
 
@@ -182,30 +164,10 @@ test : clean_config clean_repository build_test stop_all
 sgx_build_test : repository sgx_build_services build_ccf build_client
 
 sgx_keys :
-	# check for collateral in PDO_SGX_KEY_ROOT and copy that in xfer
-	# or, copy anything in the default folder to xfer
-	if [ ! -z "${PDO_SGX_KEY_ROOT}" ]; then \
-		echo "Checking for source SGX collateral in ${PDO_SGX_KEY_ROOT}"; \
-		if [ ! -f ${PDO_SGX_KEY_ROOT}/sgx_spid_api_key.txt ] || \
-			[ ! -f ${PDO_SGX_KEY_ROOT}/sgx_spid.txt ] || \
-			[ ! -f ${PDO_SGX_KEY_ROOT}/sgx_ias_key.pem ]; then \
-			echo "Error: check PDO_SGX_KEY_ROOT and SGX collateral in it"; exit 1; \
-		fi ;\
-		echo "Copying source SGX collateral to docker"; \
-		cp ${PDO_SGX_KEY_ROOT}/* '$(DOCKER_DIR)'/xfer/services/keys/sgx/; \
-	else \
-		echo "PDO_SGX_KEY_ROOT undefined, rsync default folder to docker"; \
-		rsync -r ${PDO_SOURCE_ROOT}/build/keys/sgx_mode_hw/ '$(DOCKER_DIR)'/xfer/services/keys/sgx/; \
-	fi
-
-	# test collateral availability in xfer (possibly, but not necessarily, after the copy above)
-	@echo "Checking for SGX collateral in docker"
-	if [ ! -f '$(DOCKER_DIR)'/xfer/services/keys/sgx/sgx_spid_api_key.txt ] || \
-		[ ! -f '$(DOCKER_DIR)'/xfer/services/keys/sgx/sgx_spid.txt ] || \
-		[ ! -f '$(DOCKER_DIR)'/xfer/services/keys/sgx/sgx_ias_key.pem ]; then \
-		echo "Error: SGX collateral not docker-ready -- set PDO_SGX_KEY_ROOT and check collateral"; exit 1; \
-	fi
-	@echo "SGX collateral is docker-ready"
+	# prepare sgx keys
+	bash -c " \
+		export PDO_SOURCE_ROOT=$(PDO_SOURCE_ROOT) DOCKER_DIR=$(DOCKER_DIR); \
+		. $(DOCKER_DIR)/tools/prepare_collateral.sh && prepare_runtime_sgxkeys"
 
 sgx_test : clean_config clean_repository sgx_build_test stop_all sgx_keys
 	PDO_VERSION=$(PDO_VERSION) $(DOCKER_COMPOSE_SGX) $(TEST_SGX_FILES) up --abort-on-container-exit
