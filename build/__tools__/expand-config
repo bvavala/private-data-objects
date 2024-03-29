@@ -94,7 +94,6 @@ ContractKeys = os.path.join(ContractHome, "keys")
 ContractLogs = os.path.join(ContractHome, "logs")
 ContractData = os.path.join(ContractHome, "data")
 LedgerKeyRoot = os.environ.get("PDO_LEDGER_KEY_ROOT", os.path.join(ContractEtc, "keys", "ledger"))
-HttpsProxy = os.environ.get("https_proxy", "")
 
 config_map = {
     'data' : ContractData,
@@ -107,8 +106,7 @@ config_map = {
     'ledger' : LedgerURL,
     'ledger_type': LedgerType,
     'ledger_key_root' : LedgerKeyRoot,
-    'eservice_key_format': EserviceKeyFormat,
-    'proxy' : HttpsProxy
+    'eservice_key_format': EserviceKeyFormat
 }
 
 # -----------------------------------------------------------------

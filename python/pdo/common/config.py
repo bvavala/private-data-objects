@@ -206,7 +206,6 @@ def build_configuration_map(**kwargs) :
     ContractData = os.path.join(ContractHome, "data")
     Interpreter = kwargs.get('interpreter') or os.environ.get("PDO_INTERPRETER", "wawaka")
     LedgerKeyRoot = kwargs.get('ledger_key_root') or os.environ.get("PDO_LEDGER_KEY_ROOT", os.path.join(ContractKeys, "ledger"))
-    HttpsProxy = os.environ.get("https_proxy", "")
     EserviceKeyFormat = 'pem'
 
     config_map = {
@@ -225,7 +224,6 @@ def build_configuration_map(**kwargs) :
         'ledger_host_name' : LedgerHostName,
         'ledger_type': LedgerType,
         'ledger_key_root' : LedgerKeyRoot,
-        'proxy' : HttpsProxy,
         'sgx_mode' : SGX_MODE
     }
 

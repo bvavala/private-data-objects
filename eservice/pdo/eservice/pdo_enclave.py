@@ -162,8 +162,7 @@ def initialize_with_configuration(config) :
             ias_client.IasClient(
                 IasServer = config['ias_url'],
                 SpidApiKey = spid_api_key,
-                Spid = spid,
-                HttpsProxy = config.get('https_proxy', ""))
+                Spid = spid)
 
     if not _pdo:
         signed_enclave = __find_enclave_library(config)
