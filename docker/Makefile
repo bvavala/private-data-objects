@@ -119,10 +119,10 @@ stop_client :
 # performance requirements are relatively low.
 # -----------------------------------------------------------------
 repository :
-	# prepare enclave signing key (if any, this goes in the repo itself)
-	bash -c " \
-		export PDO_SOURCE_ROOT=$(PDO_SOURCE_ROOT); \
-		. $(DOCKER_DIR)/tools/prepare_collateral.sh && prepare_buildtime_enclavesigningkey"
+	# Prepare enclave signing key (if any, this goes in the repo itself).
+	# This is effective only in HW mode builds.
+	# PDO_SGX_KEY_ROOT is an optional parameter (either set in environment or empty)
+	$(DOCKER_DIR)/tools/copy_enclave_signing_key.sh "$(PDO_SOURCE_ROOT)" "${PDO_SGX_KEY_ROOT}"
 
 	# clone the repo
 	git clone --single-branch --branch $(PDO_BRANCH) --recurse-submodules '$(PDO_REPO)' repository
@@ -164,10 +164,9 @@ test : clean_config clean_repository build_test stop_all
 sgx_build_test : repository sgx_build_services build_ccf build_client
 
 sgx_keys :
-	# prepare sgx keys
-	bash -c " \
-		export PDO_SOURCE_ROOT=$(PDO_SOURCE_ROOT) DOCKER_DIR=$(DOCKER_DIR); \
-		. $(DOCKER_DIR)/tools/prepare_collateral.sh && prepare_runtime_sgxkeys"
+	# Prepare sgx keys.
+	# PDO_SGX_KEY_ROOT is an optional parameter (either set in environment or empty)
+	$(DOCKER_DIR)/tools/copy_sgx_keys.sh "$(PDO_SOURCE_ROOT)" "$(DOCKER_DIR)" "${PDO_SGX_KEY_ROOT}"
 
 sgx_test : clean_config clean_repository sgx_build_test stop_all sgx_keys
 	PDO_VERSION=$(PDO_VERSION) $(DOCKER_COMPOSE_SGX) $(TEST_SGX_FILES) up --abort-on-container-exit
