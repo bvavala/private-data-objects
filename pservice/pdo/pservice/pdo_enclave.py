@@ -133,7 +133,7 @@ def initialize_with_configuration(config) :
     enclave._SetLogger(logger)
 
     # Ensure that the required keys are in the configuration
-    valid_keys = set(['ias_url', 'SgxKeyRoot'])
+    valid_keys = set(['ias_url', 'sgx_key_root'])
     found_keys = set(config.keys())
 
     missing_keys = valid_keys.difference(found_keys)
@@ -145,8 +145,8 @@ def initialize_with_configuration(config) :
                     ', '.join(sorted(list(missing_keys)))))
 
     try:
-        spid = Path(os.path.join(config['SgxKeyRoot'], "sgx_spid.txt")).read_text()
-        spid_api_key = Path(os.path.join(config['SgxKeyRoot'], "sgx_spid_api_key.txt")).read_text()
+        spid = Path(os.path.join(config['sgx_key_root'], "sgx_spid.txt")).read_text()
+        spid_api_key = Path(os.path.join(config['sgx_key_root'], "sgx_spid_api_key.txt")).read_text()
     except Exception as e :
         raise Exception("Unable to access SGX keys: {}".format(str(e)))
 

@@ -560,7 +560,6 @@ def Main() :
     parser.add_argument('--data-dir', help='Directory for storing generated files', type=str)
     parser.add_argument('--source-dir', help='Directories to search for contract source', nargs='+', type=str)
     parser.add_argument('--key-dir', help='Directories to search for key files', nargs='+')
-    parser.add_argument('--sgx-key-root', help='Path to SGX key root folder', type = str)
 
     parser.add_argument('--eservice-url', help='List of enclave service URLs to use', nargs='+')
     parser.add_argument('--randomize-eservice', help="Randomize eservice used for each update", action="store_true")
@@ -640,11 +639,6 @@ def Main() :
         }
     if options.key_dir :
         config['Key']['SearchPath'] = options.key_dir
-
-    if options.sgx_key_root :
-        config['SgxKeyRoot'] = options.sgx_key_root
-    else :
-        config['SgxKeyRoot'] = os.environ.get('PDO_SGX_KEY_ROOT', "")
 
     # set up the service configuration
     if config.get('Service') is None :

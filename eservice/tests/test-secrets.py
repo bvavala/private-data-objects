@@ -69,7 +69,6 @@ parser.add_argument('--config', help='configuration file', nargs = '+')
 parser.add_argument('--config-dir', help='configuration file', nargs = '+')
 parser.add_argument('--loglevel', help='Set the logging level', default='INFO')
 parser.add_argument('--logfile', help='Name of the log file', default='__screen__')
-parser.add_argument('--sgx-key-root', help='Path to SGX key root folder', type = str)
 options = parser.parse_args()
 
 config_map['identity'] = 'test-secrets'
@@ -100,11 +99,6 @@ try :
 except Exception as e :
     logger.error('failed to initialize the block store; %s', str(e))
     ErrorShutdown()
-
-if options.sgx_key_root :
-    config['SgxKeyRoot'] = options.sgx_key_root
-else :
-    config['SgxKeyRoot'] = os.environ.get('PDO_SGX_KEY_ROOT', "")
 
 # -----------------------------------------------------------------
 # -----------------------------------------------------------------

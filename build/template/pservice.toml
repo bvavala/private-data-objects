@@ -82,6 +82,6 @@ num_of_enclaves = '7'
 # the production url is without the trailing '/dev'
 ias_url = 'https://api.trustedservices.intel.com/sgx/dev'
 
-# proxy configuration ..
-https_proxy = '${proxy}'
+# sgx key root folder configuration
+sgx_key_root = "${sgx_key_root}"
 

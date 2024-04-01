@@ -67,7 +67,7 @@ The following configuration variables can be specified:
 
 * ``EnclaveModule``
   * ``ias_url`` --  URL of the Intel Attestation Service (IAS) server (ignored)
-  * ``https_proxy`` -- proxy used to contact IAS server (ignored)
+  * ``sgx_key_root`` -- folder containing the sgx keys (ignored)
 
 * ``contract`` -- the base name of the contract to use, this is
   expected to reference a file found in ``SourceSearchPath``

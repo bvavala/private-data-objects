@@ -40,7 +40,8 @@ def GetBasename(save_path, config) :
     while True :
         try :
             logger.debug('initialize the enclave')
-            spid = Path(os.path.join(config['SgxKeyRoot'], "sgx_spid.txt")).read_text()
+            enclave_config = config.get('EnclaveModule')
+            spid = Path(os.path.join(enclave_config['sgx_key_root'], "sgx_spid.txt")).read_text()
             info = pdo_enclave_helper.get_enclave_service_info(spid)
 
             logger.info('save MR_ENCLAVE and MR_BASENAME to %s', save_path)
@@ -74,8 +75,7 @@ def GetIasCertificates(config) :
     # (signup info are not relevant here)
     # the creation of signup info includes getting a verification report from IAS
     try :
-        enclave_config = config['EnclaveModule']
-        enclave_config['SgxKeyRoot'] = config['SgxKeyRoot']
+        enclave_config = config.get('EnclaveModule')
         pdo_enclave.initialize_with_configuration(enclave_config)
     except Exception as e :
         logger.error("unable to initialize a new enclave; %s", str(e))
@@ -90,10 +90,10 @@ def GetIasCertificates(config) :
         ias_certificates = pd_dict['certificates']
 
         # dump the IAS certificates in the respective files
-        with open(os.path.join(config['SgxKeyRoot'], "ias_root_ca.cert"), "w+") as file :
+        with open(os.path.join(enclave_config['sgx_key_root'], "ias_root_ca.cert"), "w+") as file :
             file.write("{0}".format(ias_certificates[1]))
 
-        with open(os.path.join(config['SgxKeyRoot'], "ias_signing.cert"), "w+") as file :
+        with open(os.path.join(enclave_config['sgx_key_root'], "ias_signing.cert"), "w+") as file :
             file.write("{0}".format(ias_certificates[0]))
 
     except Exception as e :
@@ -127,7 +127,6 @@ def Main() :
     parser.add_argument('--config-dir', help='directory to search for configuration files', nargs = '+')
 
     parser.add_argument('--identity', help='Identity to use for the process', required = True, type = str)
-    parser.add_argument('--sgx-key-root', help='Path to SGX key root folder', type = str)
     parser.add_argument('--save', help='Where to save MR_ENCLAVE and BASENAME', type=str)
 
     parser.add_argument('--logfile', help='Name of the log file, __screen__ for standard output', type=str)
@@ -151,12 +150,6 @@ def Main() :
     except pconfig.ConfigurationException as e :
         logger.error(str(e))
         sys.exit(-1)
-
-    #Location of the SGX keys
-    if options.sgx_key_root :
-        config['SgxKeyRoot'] = options.sgx_key_root
-    else :
-        config['SgxKeyRoot'] = os.environ.get('PDO_SGX_KEY_ROOT', "")
 
     # set up the logging configuration
     if config.get('Logging') is None :

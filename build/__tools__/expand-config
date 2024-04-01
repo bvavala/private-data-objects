@@ -74,6 +74,7 @@ def parse_configuration_file(filename, variable_map) :
 ## -----------------------------------------------------------------
 try :
     ContractHome = os.environ["PDO_HOME"]
+    PdoHome = os.environ["PDO_HOME"]
     LedgerURL = os.environ["PDO_LEDGER_URL"]
     LedgerType = os.environ["PDO_LEDGER_TYPE"]
 except KeyError as ke :
@@ -94,6 +95,7 @@ ContractKeys = os.path.join(ContractHome, "keys")
 ContractLogs = os.path.join(ContractHome, "logs")
 ContractData = os.path.join(ContractHome, "data")
 LedgerKeyRoot = os.environ.get("PDO_LEDGER_KEY_ROOT", os.path.join(ContractEtc, "keys", "ledger"))
+SgxKeyRoot = os.environ.get("PDO_SGX_KEY_ROOT", os.path.join(PdoHome, "keys", "sgx_mode_hw"))
 
 config_map = {
     'data' : ContractData,
@@ -106,7 +108,8 @@ config_map = {
     'ledger' : LedgerURL,
     'ledger_type': LedgerType,
     'ledger_key_root' : LedgerKeyRoot,
-    'eservice_key_format': EserviceKeyFormat
+    'eservice_key_format': EserviceKeyFormat,
+    'sgx_key_root': SgxKeyRoot
 }
 
 # -----------------------------------------------------------------
