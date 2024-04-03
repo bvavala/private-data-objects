@@ -169,7 +169,6 @@ def build_configuration_map(**kwargs) :
         # these are the minimum variables that must be defined in the
         # environment; there are reasonable defaults for the others
         ContractHome = kwargs.get('home') or os.environ["PDO_HOME"]
-        PdoHome = os.environ["PDO_HOME"]
         LedgerURL = kwargs.get('ledger') or os.environ["PDO_LEDGER_URL"]
         LedgerType = kwargs.get('ledger_type') or os.environ["PDO_LEDGER_TYPE"]
     except KeyError as ke :
@@ -208,7 +207,7 @@ def build_configuration_map(**kwargs) :
     Interpreter = kwargs.get('interpreter') or os.environ.get("PDO_INTERPRETER", "wawaka")
     LedgerKeyRoot = kwargs.get('ledger_key_root') or os.environ.get("PDO_LEDGER_KEY_ROOT", os.path.join(ContractKeys, "ledger"))
     EserviceKeyFormat = 'pem'
-    SgxKeyRoot = os.environ.get("PDO_SGX_KEY_ROOT", os.path.join(PdoHome, "keys", "sgx_mode_hw"))
+    SgxKeyRoot = os.environ.get('PDO_SGX_KEY_ROOT', ContractKeys)
 
 
     config_map = {

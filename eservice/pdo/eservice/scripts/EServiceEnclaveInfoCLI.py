@@ -127,6 +127,7 @@ def Main() :
     parser.add_argument('--config-dir', help='directory to search for configuration files', nargs = '+')
 
     parser.add_argument('--identity', help='Identity to use for the process', required = True, type = str)
+    parser.add_argument('--sgx-key-root', help='Path to SGX key root folder', type = str)
     parser.add_argument('--save', help='Where to save MR_ENCLAVE and BASENAME', type=str)
 
     parser.add_argument('--logfile', help='Name of the log file, __screen__ for standard output', type=str)
@@ -164,6 +165,18 @@ def Main() :
     plogger.setup_loggers(config.get('Logging', {}))
     sys.stdout = plogger.stream_to_logger(logging.getLogger('STDOUT'), logging.DEBUG)
     sys.stderr = plogger.stream_to_logger(logging.getLogger('STDERR'), logging.WARN)
+
+    # set up the default enclave module configuration (if necessary)
+    if config.get('EnclaveModule') is None :
+        config['EnclaveModule'] = {
+            'num_of_enclaves' : 7,
+            'ias_url' : 'https://api.trustedservices.intel.com/sgx/dev',
+            'sgx_key_root' : os.environ.get('PDO_SGX_KEY_ROOT', '.')
+        }
+
+    # override the enclave module configuration (if options are specified)
+    if options.sgx_key_root :
+        config['EnclaveModule']['sgx_key_root'] = options.sgx_key_root
 
     # GO!
     LocalMain(config, save_path)
