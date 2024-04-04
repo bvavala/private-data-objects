@@ -119,13 +119,13 @@ stop_client :
 # performance requirements are relatively low.
 # -----------------------------------------------------------------
 repository :
+	# clone the repo
+	git clone --single-branch --branch $(PDO_BRANCH) --recurse-submodules '$(PDO_REPO)' repository
+
 	# Prepare enclave signing key (if any, this goes in the repo itself).
 	# This is effective only in HW mode builds.
 	# PDO_SGX_KEY_ROOT is an optional parameter (either set in environment or empty)
-	$(DOCKER_DIR)/tools/copy_enclave_signing_key.sh "$(PDO_SOURCE_ROOT)" "${PDO_SGX_KEY_ROOT}"
-
-	# clone the repo
-	git clone --single-branch --branch $(PDO_BRANCH) --recurse-submodules '$(PDO_REPO)' repository
+	$(DOCKER_DIR)/tools/copy_enclave_signing_key.sh "$(PDO_SOURCE_ROOT)" repository "${PDO_SGX_KEY_ROOT}"
 
 clean_repository :
 	rm -rf repository
@@ -189,11 +189,14 @@ clean_config :
 	rm -f '$(DOCKER_DIR)'/xfer/services/keys/*.pem '$(DOCKER_DIR)'/xfer/services/etc/*.toml
 	rm -f '$(DOCKER_DIR)'/xfer/services/keys/sgx/*.pem '$(DOCKER_DIR)'/xfer/services/keys/sgx/*.txt
 	rm -f '$(DOCKER_DIR)'/xfer/services/etc/site.psh
+	# clean the artifacts of the prepare_ias_certificates target
+	rm -f $(IAS_CERTIFICATES)
 
 clean : clean_images clean_config clean_repository
 
 .PHONY: clean clean_images clean_config clean_repository
 .PHONY: build_test test
+.PHONY: sgx_build_test sgx_test sgx_keys
 .PHONY: run_ccf run_client run_services
 
 # -----------------------------------------------------------------

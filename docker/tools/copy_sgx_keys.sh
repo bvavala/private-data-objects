@@ -43,12 +43,12 @@ if [ ! -z "${PDO_SGX_KEY_ROOT}" ]; then
     fi
     
     yell "SGX keys: found ... copying them to docker"
-    cp ${PDO_SGX_KEY_ROOT}/* ${DOCKER_DIR}/xfer/services/keys/sgx/
+    try cp ${PDO_SGX_KEY_ROOT}/* ${DOCKER_DIR}/xfer/services/keys/sgx/
 
 else
     yell "SGX keys: PDO_SGX_KEY_ROOT undefined"
     yell "SGX keys: rsyncing default folder ${PDO_SOURCE_ROOT}/build/keys/sgx_mode_hw/ to docker"
-    rsync -r ${PDO_SOURCE_ROOT}/build/keys/sgx_mode_hw/ ${DOCKER_DIR}/xfer/services/keys/sgx/
+    try rsync -r ${PDO_SOURCE_ROOT}/build/keys/sgx_mode_hw/ ${DOCKER_DIR}/xfer/services/keys/sgx/
 fi
     
 # test sgx keys availability in xfer

@@ -20,14 +20,15 @@
 # Note: the key (if any) is copied into the default folder for HW mode builds;
 #       so for SIM mode builds, this will have no effect.
 
-if [ $# != 1 ] && [ $# != 2 ]; then
-    echo "$(basename $0 '${PDO_SOURCE_ROOT} [ ${PDO_SGX_KEY_ROOT} ]')"
-    echo "PDO_SOURCE_ROOT is required, PDO_SGX_KEY_ROOT is optional"
+if [ $# != 2 ] && [ $# != 3 ]; then
+    echo "$(basename $0 '<PDO source repo path> <PDO dest repo path> [ ${PDO_SGX_KEY_ROOT} ]')"
+    echo "PDO source and dest paths are required, PDO_SGX_KEY_ROOT is optional"
     exit 1
 fi
 
 PDO_SOURCE_ROOT=$1
-PDO_SGX_KEY_ROOT=$2
+PDO_DEST_ROOT=$2
+PDO_SGX_KEY_ROOT=$3
 
 source ${PDO_SOURCE_ROOT}/bin/lib/common.sh
 
@@ -37,20 +38,20 @@ source ${PDO_SOURCE_ROOT}/bin/lib/common.sh
 # Note: in the docker container, the host key (or a new key) will be placed on the same path,
 # but the PDO_SGX_KEY_ROOT default value is defined in docker/tools/environment.sh
 
-DEFAULT_KEY_PATH="${PDO_SOURCE_ROOT}/build/keys/sgx_mode_hw/enclave_code_sign.pem"
+KEY_REL_PATH="build/keys/sgx_mode_hw/enclave_code_sign.pem"
 
-if [ ! -z "${PDO_SGX_KEY_ROOT}" ]; then
-    yell "Enclave signing key: PDO_SGX_KEY_ROOT is defined"
-    if [ -e "${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem" ]; then
-        yell "Enclave signing key: using host-provided key: ${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem"
-
-        rsync ${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem ${DEFAULT_KEY_PATH}
-        yell "Enclave signing key: host-provided key copied to ${DEFAULT_KEY_PATH}"
-    else
-        yell "Enclave signing key: not found on host, a new one will be generated"
-    fi
+if [ ! -z "${PDO_SGX_KEY_ROOT}" ] && [ -e "${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem" ]; then
+    yell "Enclave signing key: using host-provided key: ${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem"
+    yell "Enclave signing key: copying it to ${PDO_DEST_ROOT}/${KEY_REL_PATH}"
+    try rsync ${PDO_SGX_KEY_ROOT}/enclave_code_sign.pem ${PDO_DEST_ROOT}/${KEY_REL_PATH}
 else
-    yell "Enclave signing key: PDO_SGX_KEY_ROOT not defined; if a key is in the default path, it will be used"
+    yell "Enclave signing key: none available, now checking default path ${PDO_SOURCE_ROOT}/${KEY_REL_PATH}"
+    if [ -e "${PDO_SOURCE_ROOT}/${KEY_REL_PATH}" ]; then
+        yell "Enclave signing key: key available, copying it to ${PDO_DEST_ROOT}/${KEY_REL_PATH}"
+        try rsync ${PDO_SOURCE_ROOT}/${KEY_REL_PATH} ${PDO_DEST_ROOT}/${KEY_REL_PATH}
+    else
+        yell "Enclave signing key: no default key, a new one will be generated"
+    fi
 fi
 
 exit 0
