@@ -50,6 +50,8 @@ DOCKER_BUILDARGS += --build-arg UID=$(PDO_USER_UID)
 DOCKER_BUILDARGS += --build-arg GID=$(PDO_GROUP_UID)
 DOCKER_ARGS = $(DOCKER_BUILDARGS)
 
+IAS_CERTIFICATES=$(DOCKER_DIR)/repository/common/crypto/verify_ias_report/ias-certificates.txt
+
 IMAGES=base client services_base services services_sgx ccf_base ccf
 
 # for the most part this is just used to force rebuild when the
@@ -71,7 +73,7 @@ build_% : repository
 		--tag pdo_$*:$(PDO_VERSION) \
 		--file '$(DOCKER_DIR)'/pdo_$*.dockerfile .
 
-sgx_build_services : repository build_services_base
+sgx_build_services : $(IAS_CERTIFICATES) repository build_services_base
 	docker build $(DOCKER_ARGS) \
         --build-arg PDO_VERSION=$(PDO_VERSION) \
         --build-arg SGX_MODE=HW \
@@ -110,6 +112,11 @@ stop_services :
 
 stop_client :
 	- docker rm -f client_container
+
+$(IAS_CERTIFICATES) : repository
+	# the script prepares the certificates from the source repo
+	# and moves only the necessary artifacts to the destination repo (absolute path required)
+	$(DOCKER_DIR)/tools/prepare_ias_certificates.sh "$(PDO_SOURCE_ROOT)" $(DOCKER_DIR)/$<
 
 # -----------------------------------------------------------------
 # We need a repository with the source for the branch we are going
