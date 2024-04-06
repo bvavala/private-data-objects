@@ -20,6 +20,8 @@ services:
       - SGX_MODE=HW
 
   services_container:
+    environment:
+      - PDO_FORCE_IAS_PROXY=${PDO_FORCE_IAS_PROXY:-false}
     image: pdo_services_sgx:${PDO_VERSION:-latest}
     volumes:
       - /var/run/aesmd:/var/run/aesmd

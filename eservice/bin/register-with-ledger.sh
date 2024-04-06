@@ -50,13 +50,24 @@ function DeriveIasPublicKey {
 function Store {
     try test -e ${ETCDIR}/${ESERVICE_TOML}
     yell Download IAS certificates and Compute the enclave information
-    try eservice-enclave-info \
-        --save ${eservice_enclave_info_file} \
-        --loglevel warn \
-        --logfile __screen__ \
-        --identity ${ESERVICE_IDENTITY} \
-        --config ${ESERVICE_TOML} \
-        --config-dir ${ETCDIR}
+    if [ "${PDO_FORCE_IAS_PROXY}" == "true" ]; then
+        yell PDO_FORCE_IAS_PROXY is true
+        NO_PROXY='' no_proxy='' try eservice-enclave-info \
+            --save ${eservice_enclave_info_file} \
+            --loglevel info \
+            --logfile __screen__ \
+            --identity ${ESERVICE_IDENTITY} \
+            --config ${ESERVICE_TOML} \
+            --config-dir ${ETCDIR}
+    else
+        try eservice-enclave-info \
+            --save ${eservice_enclave_info_file} \
+            --loglevel info \
+            --logfile __screen__ \
+            --identity ${ESERVICE_IDENTITY} \
+            --config ${ESERVICE_TOML} \
+            --config-dir ${ETCDIR}
+    fi
     yell Enclave info are ready
 }
 

@@ -132,7 +132,7 @@ force-config :
 
 ifeq ($(SGX_MODE),HW)
 register : $(PYTHON_DIR)
-	@ echo registering enclave and IAS public key on the ledger
+	@ echo Register the enclave registration policy on the ledger
 	. $(abspath $(DSTDIR)/bin/activate) && $(SRCDIR)/eservice/bin/register-with-ledger.sh
 
 else
