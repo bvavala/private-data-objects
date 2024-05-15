@@ -59,7 +59,7 @@ ext_deps = [
 ## -----------------------------------------------------------------
 ## set up the contract enclave
 ## -----------------------------------------------------------------
-debug_flag = os.environ.get('PDO_DEBUG_BUILD',0)
+debug_flag = os.environ.get('PDO_DEBUG_BUILD', False) in ("1")
 
 module_path = 'pdo/eservice/enclave'
 module_src_path = os.path.join(script_dir, module_path)
@@ -132,6 +132,12 @@ compile_defs = [
     ('SGX_SIMULATOR', SGX_SIMULATOR_value)
 ]
 
+# When the debug flag (PDO_DEBUG_BUILD) is set, we set the EDEBUG define
+# This ensures that the SGX SDK in sgx_urts.h sets the SGX_DEBUG_FLAG to 1.
+# Otherwise the SDK sets it to 0.
+if debug_flag :
+    compile_defs.append(('EDEBUG', None))
+
 swig_flags = ['-c++', '-threads']
 
 enclave_module = Extension(
@@ -142,8 +148,7 @@ enclave_module = Extension(
     libraries = libraries,
     include_dirs = include_dirs,
     library_dirs = library_dirs,
-    define_macros = compile_defs,
-    undef_macros = ['NDEBUG', 'EDEBUG']
+    define_macros = compile_defs
     )
 
 ## -----------------------------------------------------------------
