@@ -60,6 +60,8 @@ ext_deps = [
 module_path = 'pdo/pservice/enclave'
 module_src_path = os.path.join(script_dir, module_path)
 
+debug_flag = os.environ.get('PDO_DEBUG_BUILD', False) in ("1")
+
 compile_args = [
     '-std=c++11',
     '-Wno-switch',
@@ -109,6 +111,18 @@ module_files = [
     os.path.join(module_src_path, 'secret_info.cpp')
 ]
 
+compile_defs = [
+    ('_UNTRUSTED_', 1),
+    ('PDO_DEBUG_BUILD', debug_flag),
+    ('SGX_SIMULATOR', SGX_SIMULATOR_value)
+]
+
+# When the debug flag (PDO_DEBUG_BUILD) is set, we set the EDEBUG define
+# This ensures that the SGX SDK in sgx_urts.h sets the SGX_DEBUG_FLAG to 1.
+# Otherwise the SDK sets it to 0.
+if debug_flag :
+    compile_defs.append(('EDEBUG', None))
+
 enclave_module = Extension(
     'pdo.pservice.enclave._pdo_enclave_internal',
     module_files,
@@ -117,12 +131,7 @@ enclave_module = Extension(
     libraries = libraries,
     include_dirs = include_dirs,
     library_dirs = library_dirs,
-    define_macros = [
-                        ('_UNTRUSTED_', 1),
-                        ('PDO_DEBUG_BUILD', os.environ.get('PDO_DEBUG_BUILD',0)),
-                        ('SGX_SIMULATOR', SGX_SIMULATOR_value)
-                    ],
-    undef_macros = ['NDEBUG', 'EDEBUG']
+    define_macros = compile_defs
     )
 
 ## -----------------------------------------------------------------
