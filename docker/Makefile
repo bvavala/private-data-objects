@@ -26,7 +26,7 @@ PDO_SOURCE_ROOT ?= $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST))))/../
 
 # PDO_DEBUG_BUILD
 # The flag that determines the build type (debug or not).
-PDO_DEBUG_BUILD ?= ${PDO_DEBUG_BUILD:-0}
+PDO_DEBUG_BUILD ?= 1
 
 # PDO_REPO --
 #   The URL or path to the git repository, the default uses the current repository
@@ -68,6 +68,9 @@ IMAGES=base client services_base services services_sgx ccf_base ccf
 TIMESTAMP := $(shell /bin/date "+%Y%m%d%H%M%S")
 
 all : $(addprefix build_,$(IMAGES))
+
+show:
+	echo ${PDO_DEBUG_BUILD}
 
 rebuild_% : repository
 	$(DOCKER_COMMAND) build $(DOCKER_ARGS) \
