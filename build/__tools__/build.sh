@@ -91,7 +91,7 @@ fi
 cd build
 #try cmake ${CMAKE_ARGS} ..
 #try make ${MAKE_ARGS}
-try cmake --build . -- ${MAKE_ARGS} -j1
+try cmake --build . -- ${MAKE_ARGS}
 
 yell --------------- BIN ---------------
 cd $SRCDIR/bin
