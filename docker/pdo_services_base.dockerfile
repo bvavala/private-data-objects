@@ -122,6 +122,9 @@ RUN cd ${DCAP_PRIMITIVES}/QuoteGeneration \
         && ./download_prebuilt.sh \
         && make GEN_STATIC=1
 
+# NOTE: below the build (./release) is run twice. Unfortunately, this is necessary because both builds fails
+# when run separately in a clean environment, but succeed if they run in sequence, and produce the expected result.
+# This issue has been communicated to the developers of the DCAP primitives.
 RUN cd ${DCAP_PRIMITIVES}/QuoteVerification/QVL/Src \
     && ./release -DBUILD_ENCLAVE=ON -DBUILD_TESTS=OFF ; ./release -DBUILD_ENCLAVE=ON -DBUILD_ATTESTATION_APP=OFF -DBUILD_TESTS=OFF
 
